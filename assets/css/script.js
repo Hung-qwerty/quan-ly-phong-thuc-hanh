@@ -1,0 +1,1 @@
+//Để các file script.js chung ở đây
