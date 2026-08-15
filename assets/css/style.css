@@ -1,1 +1,45 @@
 /* Để style.css chung ở đây
+<style>
+    /* 1. Nền sáng, chữ tối - Chuẩn hệ thống trường */
+    body {
+        background-color: #f4f7f9; /* Xám xanh nhạt rất dịu */
+        color: #333;
+        font-family: 'Segoe UI', Arial, sans-serif;
+    }
+    
+    /* 2. Card trắng bo góc, đổ bóng nhẹ */
+    .card-custom {
+        background-color: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    /* 3. Màu xanh trường đặc trưng */
+    :root {
+        --hnmu-blue: #003399; /* Mã màu xanh navy của logo trường */
+    }
+    
+    .btn-primary-custom {
+        background-color: var(--hnmu-blue);
+        border: none;
+        color: white;
+    }
+    .btn-primary-custom:hover {
+        background-color: #002266;
+    }
+    
+    /* 4. Tiêu đề và màu chữ */
+    h3 { color: var(--hnmu-blue); }
+    
+    /* 5. Định dạng Table */
+    .table-custom thead {
+        background-color: var(--hnmu-blue);
+        color: white;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--hnmu-blue);
+        box-shadow: 0 0 0 0.25rem rgba(0, 51, 153, 0.15);
+    }
+</style>
