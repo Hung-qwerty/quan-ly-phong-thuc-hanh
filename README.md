@@ -6,7 +6,7 @@
 ## 2. Danh sách thành viên và phân công
 * **Nguyễn Việt Hùng (TV1):** Thiết kế Cơ sở dữ liệu, cấu hình kết nối chung (`config/database.php`) và module Quản lý Tài khoản (`pages/admin/quan_ly_user.php`).
 * **Vũ Minh Đức (TV2):** Phụ trách phân hệ Quản lý phòng thực hành (`pages/student/TV2-quanlyphongthuchanh.php`).
-* **Th Thành viên 3 (TV3):** Phụ trách phân hệ Quản lý loại thiết bị.
+* **Ôn Ngọc Phi (TV3):** Phụ trách phân hệ Quản lý booking (`pages/student/TV3-quanlybooking.php`).
 * **Đặng Đình Thái An (TV4):** Phụ trách phân hệ Quản lý thiết bị (`pages/staff/themthietbitv4.php`).
 * **Trương Văn Minh (TV5):** Phụ trách phân hệ Báo hỏng và bảo trì (`pages/staff/formbaotritv5.php`).
 
@@ -31,5 +31,6 @@
 * **Tích hợp bài cá nhân:** Đã đưa các sản phẩm mã nguồn cá nhân của các thành viên vào đúng thư mục phân quyền:
   * Module Quản lý User của TV1 (`pages/admin/quan_ly_user.php`).
   * Module Quản lý phòng của TV2 (`pages/student/TV2-quanlyphongthuchanh.php`).
+  * Module Quản lý booking của TV3 (`pages/student/TV3-quanlybooking.php`).
   * Module Quản lý thiết bị của TV4 (`pages/staff/themthietbitv4.php`).
   * Module Báo hỏng của TV5 (`pages/staff/formbaotritv5.php`).
