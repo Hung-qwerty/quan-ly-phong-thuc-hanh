@@ -1,7 +1,6 @@
 <?php
 $thietbi = [];
 
-// Hàm phân loại trạng thái
 function phanLoai($trangthai) {
     if ($trangthai == "Hoạt động") {
         return "Đang sử dụng";
@@ -34,7 +33,6 @@ if (isset($_POST["them"])) {
     <title>Quản lý thiết bị</title>
 
     <style>
-        /* 1. Nền sáng, chữ tối */
         body {
             background-color: #f4f7f9;
             color: #333;
@@ -47,7 +45,6 @@ if (isset($_POST["them"])) {
             box-sizing: border-box;
         }
 
-        /* 2. Card trắng bo góc */
         .card-custom {
             background-color: #ffffff;
             border: 1px solid #dee2e6;
@@ -55,7 +52,6 @@ if (isset($_POST["them"])) {
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
 
-        /* 3. Màu xanh trường */
         :root {
             --hnmu-blue: #003399;
         }
@@ -70,7 +66,6 @@ if (isset($_POST["them"])) {
             background-color: #002266;
         }
 
-        /* 4. Tiêu đề */
         h2, h3 {
             color: var(--hnmu-blue);
         }
@@ -84,7 +79,6 @@ if (isset($_POST["them"])) {
             margin-block-end: 15px;
         }
 
-        /* Form */
         .container {
             inline-size: 700px;
             max-inline-size: 95%;
@@ -111,7 +105,6 @@ if (isset($_POST["them"])) {
             font-size: 15px;
         }
 
-        /* Hiệu ứng khi nhập */
         input:focus,
         select:focus {
             outline: none;
@@ -119,7 +112,6 @@ if (isset($_POST["them"])) {
             box-shadow: 0 0 0 0.25rem rgba(0, 51, 153, 0.15);
         }
 
-        /* Nút */
         button {
             inline-size: 100%;
             padding: 11px;
@@ -129,14 +121,13 @@ if (isset($_POST["them"])) {
             cursor: pointer;
         }
 
-        /* Đường kẻ */
+
         hr {
             margin: 30px 0;
             border: none;
             border-block-start: 1px solid #dee2e6;
         }
 
-        /* 5. Bảng */
         .table-custom {
             inline-size: 100%;
             border-collapse: collapse;
