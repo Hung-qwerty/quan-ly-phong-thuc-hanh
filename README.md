@@ -5,10 +5,10 @@
 
 ## 2. Danh sách thành viên và phân công
 * **Nguyễn Việt Hùng (TV1):** Thiết kế Cơ sở dữ liệu, cấu hình kết nối chung (`config/database.php`) và module Quản lý Tài khoản (`pages/admin/quan_ly_user.php`).
-* **Thành viên 2 (TV2):** Phụ trách phân hệ Quản lý phòng thực hành (`pages/student/TV2-quanlyphongthuchanh.php`).
+* **Vũ Minh Đức (TV2):** Phụ trách phân hệ Quản lý phòng thực hành (`pages/student/TV2-quanlyphongthuchanh.php`).
 * **Th Thành viên 3 (TV3):** Phụ trách phân hệ Quản lý loại thiết bị.
-* **Thành viên 4 (TV4):** Phụ trách phân hệ Quản lý thiết bị (`pages/staff/themthietbitv4.php`).
-* **Th Thành viên 5 (TV5):** Phụ trách phân hệ Báo hỏng và bảo trì (`pages/staff/formbaotritv5.php`).
+* **Đặng Đình Thái An (TV4):** Phụ trách phân hệ Quản lý thiết bị (`pages/staff/themthietbitv4.php`).
+* **Trương Văn Minh (TV5):** Phụ trách phân hệ Báo hỏng và bảo trì (`pages/staff/formbaotritv5.php`).
 
 ## 3. Các đối tượng dữ liệu chính
 * **Users (Người dùng):** Quản lý thông tin tài khoản và phân quyền (Admin, Cán bộ Lab, Sinh viên).
