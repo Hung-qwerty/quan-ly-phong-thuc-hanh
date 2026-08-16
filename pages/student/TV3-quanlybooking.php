@@ -5,8 +5,7 @@ if (!isset($_SESSION['user_id'])) {
     $_SESSION['user_id'] = 101; // Giả lập sinh viên có ID 101 đang đăng nhập
 }
 
-// 1. Mảng dữ liệu giả lập kết quả câu truy vấn SQL:
-// SELECT b.*, r.room_name FROM bookings b JOIN rooms r ON b.room_id = r.id WHERE b.user_id = ?;
+// 1. Mảng dữ liệu giả lập kết quả câu truy vấn SQL
 $ds_booking = [
     [
         "id" => 1,
