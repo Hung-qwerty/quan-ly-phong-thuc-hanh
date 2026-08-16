@@ -1,11 +1,9 @@
 <?php
-// Khởi tạo session giả lập user_id cho sinh viên (Student)
 session_start();
 if (!isset($_SESSION['user_id'])) {
-    $_SESSION['user_id'] = 101; // Giả lập sinh viên có ID 101 đang đăng nhập
+    $_SESSION['user_id'] = 101;
 }
 
-// 1. Mảng dữ liệu giả lập kết quả câu truy vấn SQL
 $ds_booking = [
     [
         "id" => 1,
@@ -33,7 +31,6 @@ $ds_booking = [
     ]
 ];
 
-// 2. Xử lý logic Hủy booking (UPDATE bookings SET status = 'Đã hủy' WHERE id = ? AND user_id = ?)
 $message = "";
 if (isset($_POST['btn_huy_booking'])) {
     $booking_id_huy = (int)$_POST['booking_id'];
@@ -46,7 +43,6 @@ if (isset($_POST['btn_huy_booking'])) {
     }
 }
 
-// 3. Hàm hiển thị trạng thái theo chuẩn giao diện
 function hienThiTrangThai($trang_thai) {
     if ($trang_thai === "Đã duyệt") {
         return "<span class='badge bg-success'>● Đã duyệt</span>";
@@ -90,7 +86,6 @@ function hienThiTrangThai($trang_thai) {
         </div>
     <?php endif; ?>
 
-    <!-- 9.1 LỊCH SỬ ĐẶT PHÒNG -->
     <div class="card card-custom p-4">
         <h4 class="fw-bold mb-3">Lịch Sử Đặt Phòng</h4>
         <div class="table-responsive">
@@ -112,12 +107,10 @@ function hienThiTrangThai($trang_thai) {
                             <td><?= $item['time_slot']; ?></td>
                             <td><?= hienThiTrangThai($item['status']); ?></td>
                             <td>
-                                <!-- Nút Xem Chi Tiết Modal -->
                                 <button type="button" class="btn btn-sm btn-info text-white me-1" data-bs-toggle="modal" data-bs-target="#modalDetail<?= $item['id']; ?>">
                                     Chi tiết
                                 </button>
 
-                                <!-- Nút Hủy Booking (Chỉ cho phép khi ở trạng thái 'Chờ duyệt') -->
                                 <?php if ($item['status'] === 'Chờ duyệt'): ?>
                                     <form action="" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn hủy booking này?');">
                                         <input type="hidden" name="booking_id" value="<?= $item['id']; ?>">
@@ -129,7 +122,6 @@ function hienThiTrangThai($trang_thai) {
                             </td>
                         </tr>
 
-                        <!-- Modal 9.1 Chi tiết booking -->
                         <div class="modal fade" id="modalDetail<?= $item['id']; ?>" tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog">
                                 <div class="modal-content">
