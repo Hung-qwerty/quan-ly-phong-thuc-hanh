@@ -77,7 +77,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         <div class="card card-custom p-4 mb-4">
             <h3 class="mb-1" style="color: var(--hnmu-blue);">HỆ THỐNG QUẢN LÝ PHÒNG THỰC HÀNH</h3>
-            <p class="text-dark">Cổng thông tin quản lý và phân quyền tài khoản (Bài tập cá nhân - TV1)</p>
+            <p class="text-dark">Cổng quản lý và phân quyền tài khoản (Bài tập cá nhân - TV1)</p>
         </div>
 
         <?php echo $message; ?>
