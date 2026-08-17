@@ -1,38 +1,89 @@
 <?php
-$thietbi = [];
+session_start();
+if (!isset($_SESSION["thietbi"])) {
+    $_SESSION["thietbi"] = [];
+}
 
-function phanLoai($trangthai) {
-    if ($trangthai == "Hoạt động") {
-        return "Đang sử dụng";
-    } elseif ($trangthai == "Hỏng") {
-        return "Cần sửa chữa";
-    } else {
-        return "Đang bảo trì";
+if (isset($_POST["batdau_baotri"])) {
+
+    $i = $_POST["index"];
+
+    $_SESSION["thietbi"][$i]["trangthai"] = "Đang bảo trì";
+
+    $_SESSION["thietbi"][$i]["ngay_bat_dau"]
+        = $_POST["ngay_bat_dau"];
+
+    $_SESSION["thietbi"][$i]["ngay_hoan_thanh"]
+        = $_POST["ngay_hoan_thanh"];
+
+    $_SESSION["thietbi"][$i]["noi_dung_baotri"]
+        = $_POST["noi_dung_baotri"];
+
+    $_SESSION["thietbi"][$i]["lich_su"][] = [
+        "ngay" => $_POST["ngay_bat_dau"],
+        "noi_dung" => $_POST["noi_dung_baotri"],
+        "trangthai" => "Đang bảo trì"
+    ];
+}
+
+if (isset($_POST["capnhat"])) {
+
+    $i = $_POST["index"];
+    $trangthai_moi = $_POST["trangthai_moi"];
+
+    $_SESSION["thietbi"][$i]["trangthai"]
+        = $trangthai_moi;
+
+    /* Nếu hoàn thành thì xóa thời gian bảo trì */
+    if ($trangthai_moi == "Hoạt động") {
+
+        $_SESSION["thietbi"][$i]["ngay_bat_dau"] = "";
+        $_SESSION["thietbi"][$i]["ngay_hoan_thanh"] = "";
     }
 }
 
-if (isset($_POST["them"])) {
-    $ten = $_POST["ten"];
-    $loai = $_POST["loai"];
-    $phong = $_POST["phong"];
-    $trangthai = $_POST["trangthai"];
+$tong = count($_SESSION["thietbi"]);
 
-    $thietbi[] = [
-        "ten" => $ten,
-        "loai" => $loai,
-        "phong" => $phong,
-        "trangthai" => $trangthai
-    ];
+$hoatdong = 0;
+$hong = 0;
+$baotri = 0;
+
+foreach ($_SESSION["thietbi"] as $tb) {
+
+    if ($tb["trangthai"] == "Hoạt động") {
+        $hoatdong++;
+    }
+
+    if ($tb["trangthai"] == "Hỏng") {
+        $hong++;
+    }
+
+    if ($tb["trangthai"] == "Đang bảo trì") {
+        $baotri++;
+    }
 }
+
 ?>
 
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
+
     <meta charset="UTF-8">
-    <title>Quản lý thiết bị</title>
+
+    <title>Phòng bảo trì</title>
 
     <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --hnmu-blue: #003399;
+        }
+
         body {
             background-color: #f4f7f9;
             color: #333;
@@ -41,195 +92,374 @@ if (isset($_POST["them"])) {
             padding: 40px 0;
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        .container {
+            inline-size: 1100px;
+            max-inline-size: 96%;
+            margin: auto;
+            padding: 30px;
 
-        .card-custom {
             background-color: #ffffff;
             border: 1px solid #dee2e6;
             border-radius: 8px;
+
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
 
-        :root {
-            --hnmu-blue: #003399;
-        }
-
-        .btn-primary-custom {
-            background-color: var(--hnmu-blue);
-            border: none;
-            color: white;
-        }
-
-        .btn-primary-custom:hover {
-            background-color: #002266;
-        }
-
-        h2, h3 {
-            color: var(--hnmu-blue);
-        }
-
         h2 {
+            color: var(--hnmu-blue);
             text-align: center;
-            margin-block-end: 25px;
+            margin-block-end: 10px;
         }
 
-        h3 {
-            margin-block-end: 15px;
+        .mo-ta {
+            text-align: center;
+            color: #666;
+            margin-block-end: 30px;
         }
 
-        .container {
-            inline-size: 700px;
-            max-inline-size: 95%;
-            margin: auto;
-            padding: 30px;
-        }
-
-        .form-group {
-            margin-block-end: 15px;
-        }
-
-        label {
-            display: block;
-            font-weight: bold;
-            margin-block-end: 6px;
-        }
-
-        input,
-        select {
-            inline-size: 100%;
-            padding: 10px;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            font-size: 15px;
-        }
-
-        input:focus,
-        select:focus {
-            outline: none;
-            border-color: var(--hnmu-blue);
-            box-shadow: 0 0 0 0.25rem rgba(0, 51, 153, 0.15);
-        }
-
-        button {
-            inline-size: 100%;
-            padding: 11px;
-            margin-block-start: 5px;
-            border-radius: 5px;
-            font-size: 15px;
-            cursor: pointer;
-        }
-
-
-        hr {
-            margin: 30px 0;
-            border: none;
-            border-block-start: 1px solid #dee2e6;
-        }
-
-        .table-custom {
+        table {
             inline-size: 100%;
             border-collapse: collapse;
         }
 
-        .table-custom th,
-        .table-custom td {
+        th,
+        td {
             border: 1px solid #dee2e6;
             padding: 10px;
             text-align: center;
         }
 
-        .table-custom thead {
+        thead {
             background-color: var(--hnmu-blue);
             color: white;
         }
+
+    tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+        .status {
+            font-weight: bold;
+        }
+
+        .hong {
+            color: #dc3545;
+        }
+
+        .baotri {
+            color: #fd7e14;
+        }
+
+        .hoatdong {
+            color: #198754;
+        }
+
+        .form-baotri {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-baotri input,
+        .form-baotri select,
+        .form-baotri textarea {
+            padding: 7px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .btn {
+            padding: 8px 10px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .btn-baotri {
+            background-color: #fd7e14;
+        }
+
+        .btn-baotri:hover {
+            background-color: #d96b0b;
+        }
+
+        .btn-hoanthanh {
+            background-color: #198754;
+        }
+
+        .btn-hoanthanh:hover {
+            background-color: #146c43;
+        }
+
+        .btn-chi-tiet {
+            background-color: var(--hnmu-blue);
+        }
+
+        .btn-chi-tiet:hover {
+            background-color: #002266;
+        }
+
+        .btn-disabled {
+            color: #777;
+        }
+
+        .back {
+            display: inline-block;
+            margin-block-start: 25px;
+            color: var(--hnmu-blue);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .thong-ke {
+            display: flex;
+            gap: 15px;
+            margin-block-end: 30px;
+        }
+
+        .box {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+
+        .box strong {
+            display: block;
+            font-size: 25px;
+            margin-block-start: 5px;
+        }
+
     </style>
+
 </head>
+
 
 <body>
 
-<div class="container card-custom">
 
-    <h2>QUẢN LÝ THIẾT BỊ PHÒNG LAB</h2>
+<div class="container">
 
-    <form method="post">
+    <h2>PHÒNG BẢO TRÌ THIẾT BỊ</h2>
 
-        <div class="form-group">
-            <label>Tên thiết bị</label>
-            <input type="text"
-                   name="ten"
-                   placeholder="Nhập tên thiết bị"
-                   required>
+    <p class="mo-ta">
+        Quản lý bảo trì, xem chi tiết và cập nhật trạng thái thiết bị
+    </p>
+
+    <div class="thong-ke">
+
+        <div class="box">
+            Tổng thiết bị
+            <strong><?= $tong ?></strong>
         </div>
 
-        <div class="form-group">
-            <label>Loại thiết bị</label>
-            <input type="text"
-                   name="loai"
-                   placeholder="Ví dụ: Máy tính"
-                   required>
+        <div class="box">
+            Hoạt động
+            <strong><?= $hoatdong ?></strong>
         </div>
 
-        <div class="form-group">
-            <label>Phòng</label>
-            <input type="text"
-                   name="phong"
-                   placeholder="Ví dụ: P101"
-                   required>
+        <div class="box">
+            Hỏng
+            <strong><?= $hong ?></strong>
         </div>
 
-        <div class="form-group">
-            <label>Trạng thái</label>
-
-            <select name="trangthai">
-                <option value="Hoạt động">Hoạt động</option>
-                <option value="Hỏng">Hỏng</option>
-                <option value="Đang bảo trì">Đang bảo trì</option>
-            </select>
+        <div class="box">
+            Đang bảo trì
+            <strong><?= $baotri ?></strong>
         </div>
 
-        <button type="submit"
-                name="them"
-                class="btn-primary-custom">
-            + Thêm thiết bị
-        </button>
+    </div>
+    <table>
 
-    </form>
-
-    <hr>
-
-    <h3>Danh sách thiết bị</h3>
-
-    <table class="table-custom">
         <thead>
+
             <tr>
+
                 <th>STT</th>
                 <th>Tên thiết bị</th>
                 <th>Loại</th>
                 <th>Phòng</th>
                 <th>Trạng thái</th>
-                <th>Phân loại</th>
+                <th>Thời gian bảo trì</th>
+                <th>Thao tác</th>
+
             </tr>
+
         </thead>
 
+
         <tbody>
-            <?php foreach ($thietbi as $i => $tb) { ?>
+
+
+        <?php foreach ($_SESSION["thietbi"] as $i => $tb) { ?>
 
             <tr>
-                <td><?= $i + 1 ?></td>
-                <td><?= $tb["ten"] ?></td>
-                <td><?= $tb["loai"] ?></td>
-                <td><?= $tb["phong"] ?></td>
-                <td><?= $tb["trangthai"] ?></td>
-                <td><?= phanLoai($tb["trangthai"]) ?></td>
+
+                <td>
+                    <?= $i + 1 ?>
+                </td>
+                <td>
+                    <?= htmlspecialchars($tb["ten"]) ?>
+                </td>
+                <td>
+                    <?= htmlspecialchars($tb["loai"]) ?>
+                </td>
+                <td>
+                    <?= htmlspecialchars($tb["phong"]) ?>
+                </td>
+
+
+                <td class="status">
+
+                    <?php if ($tb["trangthai"] == "Hỏng") { ?>
+
+                        <span class="hong">
+                            Hỏng
+                        </span>
+
+                    <?php } elseif ($tb["trangthai"] == "Đang bảo trì") { ?>
+
+                        <span class="baotri">
+                            Đang bảo trì
+                        </span>
+
+                    <?php } else { ?>
+
+                        <span class="hoatdong">
+                            Hoạt động
+                        </span>
+
+                    <?php } ?>
+
+                </td>
+
+                <td>
+
+                    <?php if ($tb["trangthai"] == "Đang bảo trì") { ?>
+
+                        Bắt đầu:
+                        <?= $tb["ngay_bat_dau"] ?>
+
+                        <br>
+
+                        Hoàn thành:
+                        <?= $tb["ngay_hoan_thanh"] ?>
+
+                    <?php } else { ?>
+
+                        -
+
+                    <?php } ?>
+
+                </td>
+
+
+                <!-- THAO TÁC -->
+
+                <td>
+
+                    <?php if ($tb["trangthai"] == "Hỏng") { ?>
+
+
+                        <form method="post"
+                              class="form-baotri">
+
+
+                            <input type="hidden"
+                                   name="index"
+                                   value="<?= $i ?>">
+
+
+                            <label>
+                                Ngày bắt đầu
+                            </label>
+
+                            <input type="date"
+                                   name="ngay_bat_dau"
+                                   required>
+
+
+                            <label>
+                                Ngày hoàn thành
+                            </label>
+
+                            <input type="date"
+                                   name="ngay_hoan_thanh"
+                                   required>
+
+
+                            <textarea
+                                name="noi_dung_baotri"
+                                placeholder="Nội dung bảo trì"
+                                required></textarea>
+
+
+                            <button
+                                type="submit"
+                                name="batdau_baotri"
+                                class="btn btn-baotri">
+
+                                Bảo trì
+
+                            </button>
+
+                        </form>
+                    <?php } elseif ($tb["trangthai"] == "Đang bảo trì") { ?>
+                        <form method="post"
+                              class="form-baotri">
+                            <input type="hidden"
+                                   name="index"
+                                   value="<?= $i ?>">
+                            <select name="trangthai_moi">
+
+                                <option value="Đang bảo trì">
+                                    Đang bảo trì
+                                </option>
+
+                                <option value="Hoạt động">
+                                    Hoạt động
+                                </option>
+                                <option value="Hỏng">
+                                    Hỏng
+                                </option>
+
+                            </select>
+                            <button
+                                type="submit"
+                                name="capnhat"
+                                class="btn btn-hoanthanh">
+
+                                Cập nhật trạng thái
+
+                            </button>
+
+                        </form>
+                    <?php } else { ?>
+                        <span class="btn-disabled">
+                            Không cần bảo trì
+                        </span>
+                    <?php } ?>
+                    <br>
+                    <a
+                        href="chitiet_baotri.php?index=<?= $i ?>"
+                        class="btn btn-chi-tiet"
+                        style="display:inline-block;
+                               text-decoration:none;
+                               margin-block-start:5px;">
+                        Chi tiết
+                    </a>
+                </td>
             </tr>
 
-            <?php } ?>
+        <?php } ?>
         </tbody>
     </table>
-
+    <a href="thietbi.php" class="back">
+        ← Quay lại quản lý thiết bị
+    </a>
 </div>
-
 </body>
 </html>
