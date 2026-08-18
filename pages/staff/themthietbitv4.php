@@ -21,43 +21,71 @@ $devices = [
     ]
 ];
 
+function chuanHoaDuLieu($data)
+{
+    return trim(preg_replace('/\s+/', ' ', $data));
+}
+
 function kiemTraThietBi($name, $type, $room)
 {
-    if ($name == "" || $type == "" || $room == "") {
-        return false;
+    $errors = [];
+
+    if ($name == "") {
+        $errors["name"] = "Vui lòng nhập tên thiết bị!";
+    } elseif (mb_strlen($name, "UTF-8") > 50) {
+        $errors["name"] = "Tên thiết bị không được vượt quá 50 ký tự!";
     }
 
-    return true;
+    if ($type == "") {
+        $errors["type"] = "Vui lòng nhập loại thiết bị!";
+    } elseif (mb_strlen($type, "UTF-8") > 50) {
+        $errors["type"] = "Loại thiết bị không được vượt quá 50 ký tự!";
+    }
+
+    if ($room == "") {
+        $errors["room"] = "Vui lòng nhập phòng!";
+    } elseif (mb_strlen($room, "UTF-8") > 50) {
+        $errors["room"] = "Phòng không được vượt quá 50 ký tự!";
+    }
+
+    return $errors;
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
-    $name = trim($_POST["name"] ?? "");
-    $type = trim($_POST["type"] ?? "");
-    $room = trim($_POST["room"] ?? "");
+    $name = chuanHoaDuLieu($_POST["name"] ?? "");
+    $type = chuanHoaDuLieu($_POST["type"] ?? "");
+    $room = chuanHoaDuLieu($_POST["room"] ?? "");
 
-    if (kiemTraThietBi($name, $type, $room)) {
+    $errors = kiemTraThietBi($name, $type, $room);
 
-        $device = [
-            "id" => count($devices) + 1,
-            "name" => $name,
-            "type" => $type,
-            "room" => $room
-        ];
-
-        echo json_encode([
-            "success" => true,
-            "message" => "Thêm thiết bị thành công!",
-            "device" => $device
-        ], JSON_UNESCAPED_UNICODE);
-
-    } else {
+    if (!empty($errors)) {
 
         echo json_encode([
             "success" => false,
-            "message" => "Vui lòng nhập đầy đủ thông tin!"
+            "errors" => $errors,
+            "data" => [
+                "name" => $name,
+                "type" => $type,
+                "room" => $room
+            ]
         ], JSON_UNESCAPED_UNICODE);
+
+        exit;
     }
+
+    $device = [
+        "id" => 4,
+        "name" => $name,
+        "type" => $type,
+        "room" => $room
+    ];
+
+    echo json_encode([
+        "success" => true,
+        "message" => "Thêm thiết bị thành công!",
+        "device" => $device
+    ], JSON_UNESCAPED_UNICODE);
 
     exit;
 }
@@ -97,11 +125,6 @@ body {
 h2 {
     color: #003399;
     margin-bottom: 5px;
-}
-
-.subtitle {
-    color: #777;
-    margin-bottom: 25px;
 }
 
 .card {
@@ -150,6 +173,10 @@ input:focus {
     box-shadow: 0 0 0 3px rgba(0, 51, 153, .12);
 }
 
+input.input-error {
+    border-color: #dc3545;
+}
+
 button {
     padding: 10px 18px;
     border: 0;
@@ -169,9 +196,25 @@ button:hover {
     padding: 12px 15px;
     margin-bottom: 20px;
     border-radius: 6px;
+}
+
+.success {
     background: #e8f5ee;
     color: #198754;
     border: 1px solid #c8e6d3;
+}
+
+.error {
+    background: #ffe8e8;
+    color: #b00020;
+    border: 1px solid #f5c2c2;
+}
+
+.field-error {
+    display: none;
+    margin-top: 5px;
+    color: #dc3545;
+    font-size: 14px;
 }
 
 table {
@@ -217,18 +260,13 @@ tr:hover td {
 
     <h2>QUẢN LÝ THIẾT BỊ</h2>
 
-
     <div id="message" class="message"></div>
-
 
     <div class="card">
 
         <div class="card-title">
-
             <h3>Thêm thiết bị</h3>
-
         </div>
-
 
         <form id="deviceForm" class="form">
 
@@ -242,11 +280,12 @@ tr:hover td {
                     type="text"
                     id="name"
                     name="name"
-                    placeholder="Nhập tên thiết bị"
-                    required>
+                    maxlength="50"
+                    placeholder="Nhập tên thiết bị">
+
+                <div id="nameError" class="field-error"></div>
 
             </div>
-
 
             <div class="form-group">
 
@@ -258,11 +297,12 @@ tr:hover td {
                     type="text"
                     id="type"
                     name="type"
-                    placeholder="Nhập loại thiết bị"
-                    required>
+                    maxlength="50"
+                    placeholder="Nhập loại thiết bị">
+
+                <div id="typeError" class="field-error"></div>
 
             </div>
-
 
             <div class="form-group">
 
@@ -274,11 +314,12 @@ tr:hover td {
                     type="text"
                     id="room"
                     name="room"
-                    placeholder="Nhập phòng"
-                    required>
+                    maxlength="50"
+                    placeholder="Nhập phòng">
+
+                <div id="roomError" class="field-error"></div>
 
             </div>
-
 
             <button type="submit">
                 Thêm thiết bị
@@ -288,15 +329,11 @@ tr:hover td {
 
     </div>
 
-
     <div class="card">
 
         <div class="card-title">
-
             <h3>Danh sách thiết bị</h3>
-
         </div>
-
 
         <table>
 
@@ -311,7 +348,6 @@ tr:hover td {
 
             </thead>
 
-
             <tbody id="deviceList">
 
                 <?php foreach ($devices as $i => $device): ?>
@@ -323,21 +359,15 @@ tr:hover td {
                         </td>
 
                         <td>
-                            <?php
-                            echo htmlspecialchars($device["name"]);
-                            ?>
+                            <?php echo htmlspecialchars($device["name"], ENT_QUOTES, "UTF-8"); ?>
                         </td>
 
                         <td>
-                            <?php
-                            echo htmlspecialchars($device["type"]);
-                            ?>
+                            <?php echo htmlspecialchars($device["type"], ENT_QUOTES, "UTF-8"); ?>
                         </td>
 
                         <td>
-                            <?php
-                            echo htmlspecialchars($device["room"]);
-                            ?>
+                            <?php echo htmlspecialchars($device["room"], ENT_QUOTES, "UTF-8"); ?>
                         </td>
 
                     </tr>
@@ -352,7 +382,6 @@ tr:hover td {
 
 </div>
 
-
 <script>
 
 document.getElementById("deviceForm").addEventListener(
@@ -360,6 +389,8 @@ document.getElementById("deviceForm").addEventListener(
     function(event) {
 
         event.preventDefault();
+
+        xoaLoi();
 
         const form = new FormData(this);
 
@@ -372,45 +403,125 @@ document.getElementById("deviceForm").addEventListener(
 
             const message = document.getElementById("message");
 
+            if (!data.success) {
+
+                hienThiLoi(data.errors);
+
+                document.getElementById("name").value =
+                    data.data.name;
+
+                document.getElementById("type").value =
+                    data.data.type;
+
+                document.getElementById("room").value =
+                    data.data.room;
+
+                return;
+            }
+
             message.textContent = data.message;
+            message.className = "message success";
             message.style.display = "block";
 
-            if (data.success) {
+            const device = data.device;
 
-                const device = data.device;
+            const list =
+                document.getElementById("deviceList");
 
-                const list =
-                    document.getElementById("deviceList");
+            const row = document.createElement("tr");
 
-                const row = document.createElement("tr");
+            row.innerHTML =
+                "<td>" +
+                (list.rows.length + 1) +
+                "</td>" +
 
-                row.innerHTML =
-                    "<td>" +
-                    (list.rows.length + 1) +
-                    "</td>" +
+                "<td>" +
+                escapeHtml(device.name) +
+                "</td>" +
 
-                    "<td>" +
-                    escapeHtml(device.name) +
-                    "</td>" +
+                "<td>" +
+                escapeHtml(device.type) +
+                "</td>" +
 
-                    "<td>" +
-                    escapeHtml(device.type) +
-                    "</td>" +
+                "<td>" +
+                escapeHtml(device.room) +
+                "</td>";
 
-                    "<td>" +
-                    escapeHtml(device.room) +
-                    "</td>";
+            list.appendChild(row);
 
-                list.appendChild(row);
-
-                document.getElementById("deviceForm").reset();
-            }
+            document.getElementById("deviceForm").reset();
         });
     }
 );
 
-function escapeHtml(text) {
+function hienThiLoi(errors)
+{
+    if (errors.name) {
+        document.getElementById("nameError").textContent =
+            errors.name;
 
+        document.getElementById("nameError").style.display =
+            "block";
+
+        document.getElementById("name").classList.add(
+            "input-error"
+        );
+    }
+
+    if (errors.type) {
+        document.getElementById("typeError").textContent =
+            errors.type;
+
+        document.getElementById("typeError").style.display =
+            "block";
+
+        document.getElementById("type").classList.add(
+            "input-error"
+        );
+    }
+
+    if (errors.room) {
+        document.getElementById("roomError").textContent =
+            errors.room;
+
+        document.getElementById("roomError").style.display =
+            "block";
+
+        document.getElementById("room").classList.add(
+            "input-error"
+        );
+    }
+}
+
+function xoaLoi()
+{
+    document.getElementById("nameError").style.display =
+        "none";
+
+    document.getElementById("typeError").style.display =
+        "none";
+
+    document.getElementById("roomError").style.display =
+        "none";
+
+    document.getElementById("name").classList.remove(
+        "input-error"
+    );
+
+    document.getElementById("type").classList.remove(
+        "input-error"
+    );
+
+    document.getElementById("room").classList.remove(
+        "input-error"
+    );
+
+    document.getElementById("message").style.display =
+        "none";
+}
+
+function escapeHtml(text)
+{
     const div = document.createElement("div");
 
     div.textContent = text;
