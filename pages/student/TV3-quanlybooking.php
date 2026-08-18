@@ -101,7 +101,7 @@ function hienThiTrangThai($trang_thai) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TV3 - Student: Quản lý Booking</title>
+    <title>Quản lý Booking</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -148,8 +148,7 @@ function hienThiTrangThai($trang_thai) {
 
 <div class="container">
     <div class="card card-custom p-4 mb-4">
-        <h3 class="fw-bold">TV3 – Student: Quản lý Booking</h3>
-        <p class="text-muted mb-0">Mã Sinh viên (Session User ID): <strong><?= htmlspecialchars($_SESSION['user_id']); ?></strong></p>
+        <h3 class="fw-bold">Quản lý Booking</h3>
     </div>
 
     <?php if (!empty($message)): ?>
