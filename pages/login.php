@@ -1,5 +1,4 @@
 <?php
-// login.php - Trang cổng thông tin / điều hướng bài nhóm
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -50,13 +49,11 @@
 <body class="py-5">
     <div class="container" style="max-width: 950px;">
         
-        <!-- Banner phong cách trường -->
         <div class="header-banner text-center shadow-sm">
             <h2 class="fw-bold mb-2">CỔNG THÔNG TIN QUẢN LÝ PHÒNG THỰC HÀNH</h2>
             <p class="mb-0 text-white-50">Hệ thống bài tập nhóm - Đại học Thủ đô Hà Nội (HNMU)</p>
         </div>
 
-        <!-- Khung điều hướng nhanh các module của thành viên -->
         <div class="row g-4">
             
             <!-- Phân hệ Admin (TV1) -->
