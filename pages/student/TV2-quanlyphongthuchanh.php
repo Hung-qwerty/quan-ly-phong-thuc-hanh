@@ -1,68 +1,76 @@
 <?php
 
-// =====================================================
-// 1. MẢNG PHÒNG THỰC HÀNH
-// Có 4 trường dữ liệu:
-// Mã phòng, Tên phòng, Sức chứa, Trạng thái
-// =====================================================
-
-$rooms = [
-    [
-        "ma_phong" => "P101",
-        "ten_phong" => "Phòng máy 101",
-        "suc_chua" => 40,
-        "trang_thai" => "Trống"
-    ],
-    [
-        "ma_phong" => "P102",
-        "ten_phong" => "Phòng máy 102",
-        "suc_chua" => 35,
-        "trang_thai" => "Đang sử dụng"
-    ],
-    [
-        "ma_phong" => "P103",
-        "ten_phong" => "Phòng máy 103",
-        "suc_chua" => 45,
-        "trang_thai" => "Bảo trì"
-    ]
-];
-
-
-// =====================================================
-// 2. HÀM TỰ ĐỊNH NGHĨA
-// Kiểm tra phòng có thể đặt hay không
-// =====================================================
-
-function kiemTraPhong($trang_thai)
-{
-    if ($trang_thai == "Trống") {
-        return "Có thể đặt";
-    } elseif ($trang_thai == "Đang sử dụng") {
-        return "Không thể đặt";
-    } else {
-        return "Không thể đặt";
-    }
+function e($v){
+    return htmlspecialchars($v,ENT_QUOTES,'UTF-8');
 }
 
+$rooms=[
+    ["id"=>"P101","name"=>"Phòng máy 101","capacity"=>40,"status"=>"Trống"],
+    ["id"=>"P102","name"=>"Phòng máy 102","capacity"=>35,"status"=>"Đang sử dụng"],
+    ["id"=>"P103","name"=>"Phòng máy 103","capacity"=>45,"status"=>"Bảo trì"],
+    ["id"=>"P104","name"=>"Phòng máy 104","capacity"=>40,"status"=>"Trống"]
+];
 
-// =====================================================
-// 3. TIẾP NHẬN DỮ LIỆU TỪ FORM
-// =====================================================
+$page=$_GET["page"]??"home";
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+$data=[
+    "name"=>"",
+    "email"=>"",
+    "room"=>"",
+    "date"=>"",
+    "start"=>"",
+    "end"=>"",
+    "purpose"=>""
+];
 
-    $ma_phong = $_POST["ma_phong"];
-    $ten_phong = $_POST["ten_phong"];
-    $suc_chua = $_POST["suc_chua"];
-    $trang_thai = $_POST["trang_thai"];
+$errors=[];
+$success="";
 
-    // Thêm dữ liệu mới vào mảng
-    $rooms[] = [
-        "ma_phong" => $ma_phong,
-        "ten_phong" => $ten_phong,
-        "suc_chua" => $suc_chua,
-        "trang_thai" => $trang_thai
-    ];
+if($_SERVER["REQUEST_METHOD"]==="POST"){
+
+    $page=$_POST["page"]??"booking";
+
+    foreach($data as $key=>$value){
+        $data[$key]=trim($_POST[$key]??"");
+    }
+
+    if($data["name"]==="")
+        $errors["name"]="Vui lòng nhập họ và tên.";
+
+    if($data["email"]==="")
+        $errors["email"]="Vui lòng nhập email.";
+    elseif(!filter_var($data["email"],FILTER_VALIDATE_EMAIL))
+        $errors["email"]="Email không đúng định dạng.";
+
+    $validRooms=[];
+    foreach($rooms as $room){
+        if($room["status"]==="Trống")
+            $validRooms[]=$room["id"];
+    }
+
+    if($data["room"]==="")
+        $errors["room"]="Vui lòng chọn phòng.";
+    elseif(!in_array($data["room"],$validRooms))
+        $errors["room"]="Phòng không hợp lệ.";
+
+    if($data["date"]==="")
+        $errors["date"]="Vui lòng chọn ngày.";
+
+    if($data["start"]==="")
+        $errors["start"]="Vui lòng chọn giờ bắt đầu.";
+
+    if($data["end"]==="")
+        $errors["end"]="Vui lòng chọn giờ kết thúc.";
+    elseif($data["start"]!=="" && $data["end"]<=$data["start"])
+        $errors["end"]="Giờ kết thúc phải lớn hơn giờ bắt đầu.";
+
+    if($data["purpose"]==="")
+        $errors["purpose"]="Vui lòng nhập mục đích.";
+    elseif(mb_strlen($data["purpose"])<10)
+        $errors["purpose"]="Mục đích phải có ít nhất 10 ký tự.";
+
+    if(empty($errors))
+        $success="Gửi yêu cầu đặt phòng thành công!";
 }
 
 ?>
@@ -72,305 +80,639 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <head>
 
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
 
-    <title>Quản lý phòng thực hành</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
+<title>Lab Management</title>
 
-    <!-- =================================================
-         CSS ĐƠN GIẢN
-    ================================================== -->
+<style>
 
-    <style>
+*{
+    box-sizing:border-box;
+}
 
-        /* Phần nền của trang */
-        body {
-            background-color: #f4f7f9;
-            color: #333;
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 30px;
-        }
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#f4f7f9;
+    color:#333;
+}
 
+.sidebar{
+    position:fixed;
+    left:0;
+    top:0;
+    width:220px;
+    height:100vh;
+    background:white;
+    border-right:1px solid #ddd;
+    padding:25px 15px;
+}
 
-        /* Khung chính */
-        .container {
-            width: 900px;
-            max-width: 95%;
-            margin: auto;
-            background-color: white;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        }
+.logo{
+    font-size:18px;
+    font-weight:bold;
+    color:#003399;
+    margin-bottom:35px;
+}
 
+.menu a{
+    display:block;
+    padding:13px;
+    margin-bottom:5px;
+    text-decoration:none;
+    color:#444;
+    border-radius:6px;
+}
 
-        /* Tiêu đề */
-        h1 {
-            text-align: center;
-            color: #003399;
-            margin-bottom: 10px;
-        }
+.menu a:hover,
+.menu .active{
+    background:#eef4ff;
+    color:#003399;
+}
 
-        h2 {
-            color: #003399;
-            margin-top: 30px;
-        }
+.main{
+    margin-left:220px;
+}
 
+.header{
+    height:60px;
+    background:white;
+    border-bottom:1px solid #ddd;
+    padding:0 30px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+}
 
-        /* Mô tả */
-        .description {
-            text-align: center;
-            color: #666;
-            margin-bottom: 25px;
-        }
+.content{
+    padding:35px;
+}
 
+h1,h2,h3{
+    color:#003399;
+}
 
-        /* Form */
-        form {
-            background-color: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
+.card{
+    background:white;
+    border:1px solid #ddd;
+    border-radius:8px;
+    padding:22px;
+}
 
+.cards{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:20px;
+    margin-top:25px;
+}
 
-        /* Ô nhập */
-        input,
-        select {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            box-sizing: border-box;
-        }
+.card p{
+    color:#777;
+    line-height:1.5;
+}
 
+.card a{
+    color:#003399;
+    text-decoration:none;
+    font-weight:bold;
+}
 
-        /* Label */
-        label {
-            font-weight: bold;
-        }
+.rooms{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:20px;
+}
 
+.status{
+    display:inline-block;
+    padding:5px 10px;
+    border-radius:15px;
+    font-size:12px;
+}
 
-        /* Nút */
-        button {
-            background-color: #003399;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
+.available{
+    background:#e5f7eb;
+    color:#207a45;
+}
 
+.busy{
+    background:#ffe5e5;
+    color:#d32f2f;
+}
 
-        button:hover {
-            background-color: #002266;
-        }
+.maintenance{
+    background:#fff3cd;
+    color:#856404;
+}
 
+.form{
+    max-width:700px;
+    background:white;
+    border:1px solid #ddd;
+    border-radius:8px;
+    padding:25px;
+}
 
-        /* Bảng */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
+.group{
+    margin-bottom:17px;
+}
 
+label{
+    display:block;
+    font-weight:bold;
+    margin-bottom:6px;
+}
 
-        th,
-        td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: center;
-        }
+input,
+select,
+textarea{
+    width:100%;
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:5px;
+    font-family:Arial;
+}
 
+textarea{
+    min-height:100px;
+    resize:vertical;
+}
 
-        /* Tiêu đề bảng */
-        th {
-            background-color: #003399;
-            color: white;
-        }
+.error-input{
+    border-color:#d32f2f;
+}
 
+.error{
+    color:#d32f2f;
+    font-size:13px;
+    margin-top:5px;
+}
 
-        /* Dòng chẵn */
-        tr:nth-child(even) {
-            background-color: #f8f9fa;
-        }
+.success{
+    max-width:700px;
+    background:#e6f7ed;
+    color:#207a45;
+    padding:12px;
+    border-radius:5px;
+    margin-bottom:15px;
+}
 
-    </style>
+button{
+    background:#003399;
+    color:white;
+    border:0;
+    padding:11px 18px;
+    border-radius:5px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#002266;
+}
+
+@media(max-width:800px){
+
+    .sidebar{
+        width:180px;
+    }
+
+    .main{
+        margin-left:180px;
+    }
+
+    .cards,
+    .rooms{
+        grid-template-columns:1fr;
+    }
+
+}
+
+</style>
 
 </head>
 
-
 <body>
 
+<aside class="sidebar">
 
-<div class="container">
+<div class="logo">
+🏫 LAB MANAGEMENT
+</div>
 
-    <!-- =================================================
-         TIÊU ĐỀ
-    ================================================== -->
+<nav class="menu">
 
-    <h1>QUẢN LÝ PHÒNG THỰC HÀNH</h1>
+<a
+href="?page=home"
+class="<?= $page==="home"?"active":"" ?>"
+>
+🏠 Trang chủ
+</a>
 
-    <p class="description">
-        Quản lý thông tin và trạng thái phòng thực hành
-    </p>
+<a
+href="?page=rooms"
+class="<?= $page==="rooms"?"active":"" ?>"
+>
+🏫 Phòng thực hành
+</a>
 
+<a
+href="?page=booking"
+class="<?= $page==="booking"?"active":"" ?>"
+>
+📅 Đặt phòng
+</a>
 
-    <!-- =================================================
-         FORM NHẬP DỮ LIỆU
-    ================================================== -->
+<a
+href="?page=report"
+class="<?= $page==="report"?"active":"" ?>"
+>
+🔧 Báo hỏng
+</a>
 
-    <h2>Thêm phòng thực hành</h2>
+</nav>
 
-    <form method="POST">
+</aside>
 
-        <label>Mã phòng</label>
+<main class="main">
 
-        <input
-            type="text"
-            name="ma_phong"
-            placeholder="Ví dụ: P104"
-            required
-        >
+<header class="header">
 
+<span>Student Portal</span>
 
-        <label>Tên phòng</label>
+<strong>👤 Nguyễn Văn A</strong>
 
-        <input
-            type="text"
-            name="ten_phong"
-            placeholder="Ví dụ: Phòng máy 104"
-            required
-        >
+</header>
 
+<div class="content">
 
-        <label>Sức chứa</label>
+<?php if($page==="home"): ?>
 
-        <input
-            type="number"
-            name="suc_chua"
-            placeholder="Ví dụ: 40"
-            min="1"
-            required
-        >
+<h1>Xin chào, Nguyễn Văn A! 👋</h1>
 
+<p>
+Chào mừng bạn đến với hệ thống quản lý phòng thực hành.
+</p>
 
-        <label>Trạng thái</label>
+<div class="cards">
 
-        <select name="trang_thai" required>
+<div class="card">
 
-            <option value="">
-                -- Chọn trạng thái --
-            </option>
+<h3>🏫 Phòng thực hành</h3>
 
-            <option value="Trống">
-                Trống
-            </option>
+<p>
+Xem danh sách phòng, sức chứa và trạng thái phòng.
+</p>
 
-            <option value="Đang sử dụng">
-                Đang sử dụng
-            </option>
-
-            <option value="Bảo trì">
-                Bảo trì
-            </option>
-
-        </select>
-
-
-        <button type="submit">
-            Thêm phòng
-        </button>
-
-    </form>
-
-
-    <!-- =================================================
-         DANH SÁCH PHÒNG
-    ================================================== -->
-
-    <h2>Danh sách phòng thực hành</h2>
-
-    <table>
-
-        <tr>
-
-            <th>STT</th>
-
-            <th>Mã phòng</th>
-
-            <th>Tên phòng</th>
-
-            <th>Sức chứa</th>
-
-            <th>Trạng thái</th>
-
-            <th>Khả năng đặt</th>
-
-        </tr>
-
-
-        <?php
-
-        // =================================================
-        // 4. VÒNG LẶP DUYỆT MẢNG
-        // =================================================
-
-        $stt = 1;
-
-        foreach ($rooms as $room) {
-
-        ?>
-
-            <tr>
-
-                <td>
-                    <?php echo $stt; ?>
-                </td>
-
-                <td>
-                    <?php echo $room["ma_phong"]; ?>
-                </td>
-
-                <td>
-                    <?php echo $room["ten_phong"]; ?>
-                </td>
-
-                <td>
-                    <?php echo $room["suc_chua"]; ?> người
-                </td>
-
-                <td>
-                    <?php echo $room["trang_thai"]; ?>
-                </td>
-
-                <td>
-
-                    <?php
-                    // Gọi hàm tự định nghĩa
-                    echo kiemTraPhong($room["trang_thai"]);
-                    ?>
-
-                </td>
-
-            </tr>
-
-        <?php
-
-            $stt++;
-
-        }
-
-        ?>
-
-    </table>
+<a href="?page=rooms">
+Xem phòng →
+</a>
 
 </div>
 
+<div class="card">
+
+<h3>📅 Đặt phòng</h3>
+
+<p>
+Gửi yêu cầu sử dụng phòng thực hành.
+</p>
+
+<a href="?page=booking">
+Đặt phòng →
+</a>
+
+</div>
+
+<div class="card">
+
+<h3>🔧 Báo hỏng</h3>
+
+<p>
+Gửi thông báo khi phát hiện thiết bị gặp sự cố.
+</p>
+
+<a href="?page=report">
+Báo hỏng →
+</a>
+
+</div>
+
+</div>
+
+<?php elseif($page==="rooms"): ?>
+
+<h1>Phòng thực hành</h1>
+
+<p>
+Danh sách các phòng thực hành hiện có.
+</p>
+
+<div class="rooms">
+
+<?php foreach($rooms as $room): ?>
+
+<?php
+
+$class=
+$room["status"]==="Trống"
+?"available"
+:($room["status"]==="Đang sử dụng"
+?"busy"
+:"maintenance");
+
+?>
+
+<div class="card">
+
+<h3><?=e($room["id"])?></h3>
+
+<p><?=e($room["name"])?></p>
+
+<p>
+Sức chứa:
+<strong><?=e($room["capacity"])?> người</strong>
+</p>
+
+<span class="status <?=$class?>">
+<?=e($room["status"])?>
+</span>
+
+</div>
+
+<?php endforeach; ?>
+
+</div>
+
+<?php elseif($page==="booking"): ?>
+
+<h1>Đặt phòng</h1>
+
+<?php if($success): ?>
+
+<div class="success">
+<?=e($success)?>
+</div>
+
+<?php endif; ?>
+
+<div class="form">
+
+<form method="POST">
+
+<input
+type="hidden"
+name="page"
+value="booking"
+>
+
+<div class="group">
+
+<label>Họ và tên *</label>
+
+<input
+type="text"
+name="name"
+value="<?=e($data["name"])?>"
+class="<?=$errors["name"]??""?'error-input':''?>"
+>
+
+<?php if(isset($errors["name"])): ?>
+
+<div class="error">
+<?=e($errors["name"])?>
+</div>
+
+<?php endif; ?>
+
+</div>
+
+<div class="group">
+
+<label>Email *</label>
+
+<input
+type="text"
+name="email"
+value="<?=e($data["email"])?>"
+class="<?=isset($errors["email"])?"error-input":""?>"
+>
+
+<?php if(isset($errors["email"])): ?>
+
+<div class="error">
+<?=e($errors["email"])?>
+</div>
+
+<?php endif; ?>
+
+</div>
+
+<div class="group">
+
+<label>Phòng *</label>
+
+<select
+name="room"
+class="<?=isset($errors["room"])?"error-input":""?>"
+>
+
+<option value="">
+-- Chọn phòng --
+</option>
+
+<?php foreach($rooms as $room): ?>
+
+<?php if($room["status"]==="Trống"): ?>
+
+<option
+value="<?=e($room["id"])?>"
+<?=$data["room"]===$room["id"]?"selected":""?>
+>
+
+<?=e($room["id"])?> -
+<?=e($room["name"])?>
+
+</option>
+
+<?php endif; ?>
+
+<?php endforeach; ?>
+
+</select>
+
+<?php if(isset($errors["room"])): ?>
+
+<div class="error">
+<?=e($errors["room"])?>
+</div>
+
+<?php endif; ?>
+
+</div>
+
+<div class="group">
+
+<label>Ngày đặt phòng *</label>
+
+<input
+type="date"
+name="date"
+value="<?=e($data["date"])?>"
+class="<?=isset($errors["date"])?"error-input":""?>"
+>
+
+<?php if(isset($errors["date"])): ?>
+
+<div class="error">
+<?=e($errors["date"])?>
+</div>
+
+<?php endif; ?>
+
+</div>
+
+<div
+style="
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:15px
+"
+>
+
+<div class="group">
+
+<label>Bắt đầu *</label>
+
+<input
+type="time"
+name="start"
+value="<?=e($data["start"])?>"
+class="<?=isset($errors["start"])?"error-input":""?>"
+>
+
+<?php if(isset($errors["start"])): ?>
+
+<div class="error">
+<?=e($errors["start"])?>
+</div>
+
+<?php endif; ?>
+
+</div>
+
+<div class="group">
+
+<label>Kết thúc *</label>
+
+<input
+type="time"
+name="end"
+value="<?=e($data["end"])?>"
+class="<?=isset($errors["end"])?"error-input":""?>"
+>
+
+<?php if(isset($errors["end"])): ?>
+
+<div class="error">
+<?=e($errors["end"])?>
+</div>
+
+<?php endif; ?>
+
+</div>
+
+</div>
+
+<div class="group">
+
+<label>Mục đích sử dụng *</label>
+
+<textarea
+name="purpose"
+class="<?=isset($errors["purpose"])?"error-input":""?>"
+><?=e($data["purpose"])?></textarea>
+
+<?php if(isset($errors["purpose"])): ?>
+
+<div class="error">
+<?=e($errors["purpose"])?>
+</div>
+
+<?php endif; ?>
+
+</div>
+
+<button type="submit">
+Gửi yêu cầu
+</button>
+
+</form>
+
+</div>
+
+<?php elseif($page==="report"): ?>
+
+<h1>Báo hỏng thiết bị</h1>
+
+<div class="form">
+
+<div class="group">
+
+<label>Tên thiết bị</label>
+
+<input
+type="text"
+placeholder="Nhập tên thiết bị"
+>
+
+</div>
+
+<div class="group">
+
+<label>Phòng</label>
+
+<select>
+
+<option>-- Chọn phòng --</option>
+
+<option>P101</option>
+
+<option>P102</option>
+
+<option>P103</option>
+
+<option>P104</option>
+
+</select>
+
+</div>
+
+<div class="group">
+
+<label>Mô tả sự cố</label>
+
+<textarea
+placeholder="Nhập mô tả sự cố"
+></textarea>
+
+</div>
+
+<button
+type="button"
+onclick="alert('Đã gửi báo hỏng!')"
+>
+Gửi báo hỏng
+</button>
+
+</div>
+
+<?php endif; ?>
+
+</div>
+
+</main>
 
 </body>
-
 </html>
