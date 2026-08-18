@@ -67,7 +67,7 @@
                     <ul class="list-group list-group-flush mb-3">
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <span>Quản lý User (Validation Buổi 3)</span>
-                            <a href="pages/admin/quan_ly_user.php" class="btn btn-sm btn-role">Truy cập</a>
+                            <a href="/quan-ly-phong-thuc-hanh/pages/admin/quan_ly_user.php" class="btn btn-sm btn-role">Truy cập</a>
                         </li>
                     </ul>
                 </div>
@@ -81,11 +81,11 @@
                     <ul class="list-group list-group-flush mb-3">
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <span>Thêm thiết bị mới (TV4)</span>
-                            <a href="pages/staff/themthietbitv4.php" class="btn btn-sm btn-role">Truy cập</a>
+                            <a href="/quan-ly-phong-thuc-hanh/pages/staff/themthietbitv4.php" class="btn btn-sm btn-role">Truy cập</a>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <span>Form báo trì thiết bị (TV5)</span>
-                            <a href="pages/staff/formbaotritv5.php" class="btn btn-sm btn-role">Truy cập</a>
+                            <a href="/quan-ly-phong-thuc-hanh/pages/staff/formbaotritv5.php" class="btn btn-sm btn-role">Truy cập</a>
                         </li>
                     </ul>
                 </div>
@@ -101,7 +101,7 @@
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <span>Quản lý phòng thực hành (TV2)</span>
-                                    <a href="pages/student/TV2-quanlyphongthuchanh.php" class="btn btn-sm btn-role">Truy cập</a>
+                                    <a href="/quan-ly-phong-thuc-hanh/pages/student/TV2-quanlyphongthuchanh.php" class="btn btn-sm btn-role">Truy cập</a>
                                 </li>
                             </ul>
                         </div>
@@ -109,7 +109,7 @@
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <span>Quản lý Booking / Đặt lịch (TV3)</span>
-                                    <a href="pages/student/TV3-quanlybooking.php" class="btn btn-sm btn-role">Truy cập</a>
+                                    <a href="/quan-ly-phong-thuc-hanh/pages/student/TV3-quanlybooking.php" class="btn btn-sm btn-role">Truy cập</a>
                                 </li>
                             </ul>
                         </div>
