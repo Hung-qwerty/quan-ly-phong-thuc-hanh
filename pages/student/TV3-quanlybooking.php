@@ -32,8 +32,9 @@ $ds_booking = [
 ];
 
 $message = "";
-if (isset($_POST['btn_huy_booking'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['btn_huy_booking'])) {
     $booking_id_huy = (int)$_POST['booking_id'];
+    
     foreach ($ds_booking as &$item) {
         if ($item['id'] === $booking_id_huy && $item['status'] === 'Chờ duyệt') {
             $item['status'] = 'Đã hủy';
@@ -41,15 +42,17 @@ if (isset($_POST['btn_huy_booking'])) {
             break;
         }
     }
+    unset($item);
 }
 
 function hienThiTrangThai($trang_thai) {
-    if ($trang_thai === "Đã duyệt") {
-        return "<span class='badge bg-success'>● Đã duyệt</span>";
-    } elseif ($trang_thai === "Chờ duyệt") {
-        return "<span class='badge bg-warning text-dark'>● Chờ duyệt</span>";
-    } else {
-        return "<span class='badge bg-secondary'>● Đã hủy</span>";
+    switch ($trang_thai) {
+        case "Đã duyệt":
+            return "<span class='badge bg-success'>● Đã duyệt</span>";
+        case "Chờ duyệt":
+            return "<span class='badge bg-warning text-dark'>● Chờ duyệt</span>";
+        default:
+            return "<span class='badge bg-secondary'>● Đã hủy</span>";
     }
 }
 ?>
@@ -62,13 +65,44 @@ function hienThiTrangThai($trang_thai) {
     <title>TV3 - Student: Quản lý Booking</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f4f7f9; color: #333; font-family: 'Segoe UI', Arial, sans-serif; }
-        :root { --hnmu-blue: #003399; }
-        .card-custom { background-color: #ffffff; border: 1px solid #dee2e6; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        body {
+            background-color: #f4f7f9;
+            color: #333;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        
+        .card-custom {
+            background-color: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        :root {
+            --hnmu-blue: #003399;
+        }
+        
+        .btn-primary-custom {
+            background-color: var(--hnmu-blue);
+            border: none;
+            color: white;
+        }
+        .btn-primary-custom:hover {
+            background-color: #002266;
+            color: white;
+        }
+        
         h3, h4 { color: var(--hnmu-blue); }
-        .table-custom thead { background-color: var(--hnmu-blue); color: white; }
-        .btn-primary-custom { background-color: var(--hnmu-blue); border: none; color: white; }
-        .btn-primary-custom:hover { background-color: #002266; color: white; }
+        
+        .table-custom thead {
+            background-color: var(--hnmu-blue);
+            color: white;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--hnmu-blue);
+            box-shadow: 0 0 0 0.25rem rgba(0, 51, 153, 0.15);
+        }
     </style>
 </head>
 <body class="py-4">
@@ -76,12 +110,12 @@ function hienThiTrangThai($trang_thai) {
 <div class="container">
     <div class="card card-custom p-4 mb-4">
         <h3 class="fw-bold">TV3 – Student: Quản lý Booking</h3>
-        <p class="text-muted mb-0">Mã Sinh viên (Session User ID): <strong><?= $_SESSION['user_id']; ?></strong></p>
+        <p class="text-muted mb-0">Mã Sinh viên (Session User ID): <strong><?= htmlspecialchars($_SESSION['user_id']); ?></strong></p>
     </div>
 
     <?php if (!empty($message)): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <?= $message; ?>
+            <?= htmlspecialchars($message); ?>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     <?php endif; ?>
@@ -102,9 +136,9 @@ function hienThiTrangThai($trang_thai) {
                 <tbody>
                     <?php foreach ($ds_booking as $item): ?>
                         <tr>
-                            <td class="fw-bold"><?= $item['room_name']; ?></td>
+                            <td class="fw-bold"><?= htmlspecialchars($item['room_name']); ?></td>
                             <td><?= date('d/m/Y', strtotime($item['booking_date'])); ?></td>
-                            <td><?= $item['time_slot']; ?></td>
+                            <td><?= htmlspecialchars($item['time_slot']); ?></td>
                             <td><?= hienThiTrangThai($item['status']); ?></td>
                             <td>
                                 <button type="button" class="btn btn-sm btn-info text-white me-1" data-bs-toggle="modal" data-bs-target="#modalDetail<?= $item['id']; ?>">
@@ -121,28 +155,6 @@ function hienThiTrangThai($trang_thai) {
                                 <?php endif; ?>
                             </td>
                         </tr>
-
-                        <div class="modal fade" id="modalDetail<?= $item['id']; ?>" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title fw-bold">Chi Tiết Booking #<?= $item['id']; ?></h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body text-start">
-                                        <p><strong>Mã User (Sinh viên):</strong> <?= $_SESSION['user_id']; ?></p>
-                                        <p><strong>Phòng thực hành:</strong> <?= $item['room_name']; ?></p>
-                                        <p><strong>Ngày đặt:</strong> <?= date('d/m/Y', strtotime($item['booking_date'])); ?></p>
-                                        <p><strong>Khung giờ:</strong> <?= $item['time_slot']; ?></p>
-                                        <p><strong>Trạng thái:</strong> <?= hienThiTrangThai($item['status']); ?></p>
-                                        <p><strong>Thời gian tạo đơn:</strong> <?= $item['created_at']; ?></p>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     <?php endforeach; ?>
                 </tbody>
             </table>
@@ -150,7 +162,30 @@ function hienThiTrangThai($trang_thai) {
     </div>
 </div>
 
-<script href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<?php foreach ($ds_booking as $item): ?>
+    <div class="modal fade" id="modalDetail<?= $item['id']; ?>" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Chi Tiết Booking #<?= $item['id']; ?></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-start">
+                    <p><strong>Mã User (Sinh viên):</strong> <?= htmlspecialchars($_SESSION['user_id']); ?></p>
+                    <p><strong>Phòng thực hành:</strong> <?= htmlspecialchars($item['room_name']); ?></p>
+                    <p><strong>Ngày đặt:</strong> <?= date('d/m/Y', strtotime($item['booking_date'])); ?></p>
+                    <p><strong>Khung giờ:</strong> <?= htmlspecialchars($item['time_slot']); ?></p>
+                    <p><strong>Trạng thái:</strong> <?= hienThiTrangThai($item['status']); ?></p>
+                    <p><strong>Thời gian tạo đơn:</strong> <?= htmlspecialchars($item['created_at']); ?></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+<?php endforeach; ?>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
