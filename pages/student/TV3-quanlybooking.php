@@ -1,55 +1,49 @@
 <?php
-session_start();
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['user_id'] = 101;
-}
-
 $ds_phong = [
     ["id" => "P101", "ten" => "Phòng Thực Hành 101", "suc_chua" => 40],
     ["id" => "P105", "ten" => "Phòng Thực Hành 105", "suc_chua" => 30],
     ["id" => "P203", "ten" => "Phòng Máy Tính 203", "suc_chua" => 50],
 ];
 
-if (!isset($_SESSION['ds_booking'])) {
-    $_SESSION['ds_booking'] = [
-        [
-            "id" => 1,
-            "user_id" => 101,
-            "room_name" => "P101",
-            "booking_date" => "2026-08-20",
-            "time_slot" => "08:00 - 10:00",
-            "status" => "Đã duyệt",
-            "created_at" => "2026-08-15 09:00:00"
-        ],
-        [
-            "id" => 2,
-            "user_id" => 101,
-            "room_name" => "P203",
-            "booking_date" => "2026-08-22",
-            "time_slot" => "13:00 - 15:00",
-            "status" => "Chờ duyệt",
-            "created_at" => "2026-08-16 10:30:00"
-        ],
-        [
-            "id" => 3,
-            "user_id" => 102,
-            "room_name" => "P105",
-            "booking_date" => "2026-08-20",
-            "time_slot" => "08:00 - 10:00",
-            "status" => "Đã duyệt",
-            "created_at" => "2026-08-14 14:20:00"
-        ]
-    ];
-}
+$ds_booking = [
+    [
+        "id" => 1,
+        "user_id" => 101,
+        "room_name" => "P101",
+        "booking_date" => "2026-08-20",
+        "time_slot" => "08:00 - 10:00",
+        "status" => "Đã duyệt",
+        "created_at" => "2026-08-15 09:00:00"
+    ],
+    [
+        "id" => 2,
+        "user_id" => 101,
+        "room_name" => "P203",
+        "booking_date" => "2026-08-22",
+        "time_slot" => "13:00 - 15:00",
+        "status" => "Chờ duyệt",
+        "created_at" => "2026-08-16 10:30:00"
+    ],
+    [
+        "id" => 3,
+        "user_id" => 102,
+        "room_name" => "P105",
+        "booking_date" => "2026-08-20",
+        "time_slot" => "08:00 - 10:00",
+        "status" => "Đã duyệt",
+        "created_at" => "2026-08-14 14:20:00"
+    ]
+];
 
+$user_id_hien_tai = 101;
 $message = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['btn_huy_booking'])) {
     $booking_id_huy = (int)$_POST['booking_id'];
     $today = date('Y-m-d');
 
-    foreach ($_SESSION['ds_booking'] as &$item) {
-        if ($item['id'] === $booking_id_huy && $item['user_id'] === $_SESSION['user_id']) {
+    foreach ($ds_booking as &$item) {
+        if ($item['id'] === $booking_id_huy && $item['user_id'] === $user_id_hien_tai) {
             if ($item['status'] === 'Chờ duyệt' || $item['booking_date'] >= $today) {
                 $item['status'] = 'Đã hủy';
                 $message = "Đã hủy thành công đơn đặt phòng #" . $booking_id_huy;
@@ -70,7 +64,7 @@ $phong_trong = [];
 if (!empty($search_date) && !empty($search_time)) {
     foreach ($ds_phong as $phong) {
         $is_busy = false;
-        foreach ($_SESSION['ds_booking'] as $b) {
+        foreach ($ds_booking as $b) {
             if ($b['room_name'] === $phong['id'] && 
                 $b['booking_date'] === $search_date && 
                 $b['time_slot'] === $search_time && 
@@ -275,7 +269,7 @@ function hienThiTrangThai($trang_thai) {
     <header class="top-navbar">
         <div class="text-muted small fw-semibold">Student Portal</div>
         <div class="fw-bold text-dark">
-            👤 Sinh viên (ID: <?= $_SESSION['user_id']; ?>)
+            👤 Sinh viên (ID: <?= $user_id_hien_tai; ?>)
         </div>
     </header>
 
@@ -375,12 +369,11 @@ function hienThiTrangThai($trang_thai) {
                         </thead>
                         <tbody>
                             <?php 
-                            $my_id = $_SESSION['user_id'];
                             $today = date('Y-m-d');
                             $has_item = false;
 
-                            foreach ($_SESSION['ds_booking'] as $item): 
-                                if ($item['user_id'] === $my_id):
+                            foreach ($ds_booking as $item): 
+                                if ($item['user_id'] === $user_id_hien_tai):
                                     $has_item = true;
                                     $can_cancel = ($item['status'] === 'Chờ duyệt' || ($item['status'] === 'Đã duyệt' && $item['booking_date'] >= $today));
                             ?>
@@ -477,7 +470,7 @@ function hienThiTrangThai($trang_thai) {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($_SESSION['ds_booking'] as $item): ?>
+                            <?php foreach ($ds_booking as $item): ?>
                                 <tr>
                                     <td class="fw-bold"><?= htmlspecialchars($item['room_name']); ?></td>
                                     <td><?= date('d/m/Y', strtotime($item['booking_date'])); ?></td>
@@ -500,8 +493,8 @@ function hienThiTrangThai($trang_thai) {
     </main>
 </div>
 
-<?php foreach ($_SESSION['ds_booking'] as $item): ?>
-    <?php if ($item['user_id'] === $_SESSION['user_id']): ?>
+<?php foreach ($ds_booking as $item): ?>
+    <?php if ($item['user_id'] === $user_id_hien_tai): ?>
         <div class="modal fade" id="modalDetail<?= $item['id']; ?>" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -510,7 +503,7 @@ function hienThiTrangThai($trang_thai) {
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body text-start">
-                        <p><strong>Mã User (Sinh viên):</strong> <?= htmlspecialchars($_SESSION['user_id']); ?></p>
+                        <p><strong>Mã User (Sinh viên):</strong> <?= htmlspecialchars($user_id_hien_tai); ?></p>
                         <p><strong>Phòng thực hành:</strong> <?= htmlspecialchars($item['room_name']); ?></p>
                         <p><strong>Ngày đặt:</strong> <?= date('d/m/Y', strtotime($item['booking_date'])); ?></p>
                         <p><strong>Khung giờ:</strong> <?= htmlspecialchars($item['time_slot']); ?></p>
