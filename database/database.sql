@@ -10,7 +10,7 @@
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
-
+SET foreign_key_checks = 0;
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -20,6 +20,19 @@ SET time_zone = "+00:00";
 --
 -- Cơ sở dữ liệu: `quan_ly_phong_thuc_hanh`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Xóa bảng cũ nếu tồn tại trước khi tạo mới (tránh lỗi trùng lặp)
+--
+DROP TABLE IF EXISTS `bookings`;
+DROP TABLE IF EXISTS `maintenance`;
+DROP TABLE IF EXISTS `device_reports`;
+DROP TABLE IF EXISTS `devices`;
+DROP TABLE IF EXISTS `device_types`;
+DROP TABLE IF EXISTS `rooms`;
+DROP TABLE IF EXISTS `users`;
 
 -- --------------------------------------------------------
 
@@ -275,6 +288,8 @@ ALTER TABLE `device_reports`
 ALTER TABLE `maintenance`
   ADD CONSTRAINT `maintenance_ibfk_1` FOREIGN KEY (`device_id`) REFERENCES `devices` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `maintenance_ibfk_2` FOREIGN KEY (`staff_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+SET foreign_key_checks = 1;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
