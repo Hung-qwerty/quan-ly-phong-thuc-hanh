@@ -2,7 +2,22 @@
 
 session_start();
 
-require_once __DIR__ . "/../../config/database.php";
+$host = "127.0.0.1";
+$dbname = "quan_ly_phong_thuc_hanh";
+$username = "root";
+$password = "";
+
+try {
+    $pdo = new PDO(
+        "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
+        $username,
+        $password
+    );
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    die("Không thể kết nối database: " . $e->getMessage());
+}
 
 function e($value) {
     return htmlspecialchars($value ?? "", ENT_QUOTES, "UTF-8");
@@ -13,19 +28,6 @@ $page = $_GET["page"] ?? "home";
 
 $errors = [];
 $success = "";
-
-$booking = [
-    "room_id" => "",
-    "date" => "",
-    "start" => "",
-    "end" => "",
-    "purpose" => ""
-];
-
-$report = [
-    "device_id" => "",
-    "description" => ""
-];
 
 $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
 $stmt->execute([$user_id]);
@@ -57,37 +59,33 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         $page = "booking";
 
-        $booking["room_id"] = trim($_POST["room_id"] ?? "");
-        $booking["date"] = trim($_POST["date"] ?? "");
-        $booking["start"] = trim($_POST["start"] ?? "");
-        $booking["end"] = trim($_POST["end"] ?? "");
-        $booking["purpose"] = trim($_POST["purpose"] ?? "");
+        $room_id = $_POST["room_id"] ?? "";
+        $date = $_POST["date"] ?? "";
+        $start = $_POST["start"] ?? "";
+        $end = $_POST["end"] ?? "";
+        $purpose = trim($_POST["purpose"] ?? "");
 
-        if ($booking["room_id"] === "") {
+        if ($room_id === "") {
             $errors["room_id"] = "Vui lòng chọn phòng.";
         }
 
-        if ($booking["date"] === "") {
+        if ($date === "") {
             $errors["date"] = "Vui lòng chọn ngày.";
         }
 
-        if ($booking["start"] === "") {
+        if ($start === "") {
             $errors["start"] = "Vui lòng chọn giờ bắt đầu.";
         }
 
-        if ($booking["end"] === "") {
+        if ($end === "") {
             $errors["end"] = "Vui lòng chọn giờ kết thúc.";
         }
 
-        if (
-            $booking["start"] !== "" &&
-            $booking["end"] !== "" &&
-            $booking["end"] <= $booking["start"]
-        ) {
+        if ($start !== "" && $end !== "" && $end <= $start) {
             $errors["end"] = "Giờ kết thúc phải lớn hơn giờ bắt đầu.";
         }
 
-        if ($booking["purpose"] === "") {
+        if ($purpose === "") {
             $errors["purpose"] = "Vui lòng nhập mục đích.";
         }
 
@@ -100,7 +98,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 AND status != 'maintenance'
             ");
 
-            $stmt->execute([$booking["room_id"]]);
+            $stmt->execute([$room_id]);
 
             if (!$stmt->fetch()) {
                 $errors["room_id"] = "Phòng không tồn tại hoặc đang bảo trì.";
@@ -109,8 +107,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         if (empty($errors)) {
 
-            $start_time = $booking["date"] . " " . $booking["start"] . ":00";
-            $end_time = $booking["date"] . " " . $booking["end"] . ":00";
+            $start_time = $date . " " . $start . ":00";
+            $end_time = $date . " " . $end . ":00";
 
             $stmt = $pdo->prepare("
                 SELECT id
@@ -122,7 +120,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             ");
 
             $stmt->execute([
-                $booking["room_id"],
+                $room_id,
                 $end_time,
                 $start_time
             ]);
@@ -142,21 +140,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             $stmt->execute([
                 $user_id,
-                $booking["room_id"],
+                $room_id,
                 $start_time,
                 $end_time,
-                $booking["purpose"]
+                $purpose
             ]);
 
-            $success = "Đặt phòng thành công. Yêu cầu đang chờ duyệt.";
+            $success = "Đặt phòng thành công.";
 
-            $booking = [
-                "room_id" => "",
-                "date" => "",
-                "start" => "",
-                "end" => "",
-                "purpose" => ""
-            ];
+            $room_id = "";
+            $date = "";
+            $start = "";
+            $end = "";
+            $purpose = "";
         }
     }
 
@@ -164,14 +160,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         $page = "report";
 
-        $report["device_id"] = trim($_POST["device_id"] ?? "");
-        $report["description"] = trim($_POST["description"] ?? "");
+        $device_id = $_POST["device_id"] ?? "";
+        $description = trim($_POST["description"] ?? "");
 
-        if ($report["device_id"] === "") {
+        if ($device_id === "") {
             $errors["device_id"] = "Vui lòng chọn thiết bị.";
         }
 
-        if ($report["description"] === "") {
+        if ($description === "") {
             $errors["description"] = "Vui lòng nhập nội dung báo hỏng.";
         }
 
@@ -183,7 +179,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 WHERE id = ?
             ");
 
-            $stmt->execute([$report["device_id"]]);
+            $stmt->execute([$device_id]);
 
             if (!$stmt->fetch()) {
                 $errors["device_id"] = "Thiết bị không tồn tại.";
@@ -199,17 +195,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             ");
 
             $stmt->execute([
-                $report["device_id"],
+                $device_id,
                 $user_id,
-                $report["description"]
+                $description
             ]);
 
             $success = "Báo hỏng thiết bị thành công.";
 
-            $report = [
-                "device_id" => "",
-                "description" => ""
-            ];
+            $device_id = "";
+            $description = "";
         }
     }
 }
@@ -264,213 +258,211 @@ $my_reports = $stmt->fetchAll();
 
 <style>
 
-*{
-    box-sizing:border-box;
+* {
+    box-sizing: border-box;
 }
 
-body{
-    margin:0;
-    font-family:Arial,sans-serif;
-    background:#f4f7f9;
-    color:#333;
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f7f9;
+    color: #333;
 }
 
-.sidebar{
-    position:fixed;
-    width:220px;
-    height:100vh;
-    background:#fff;
-    border-right:1px solid #ddd;
-    padding:25px 15px;
+.sidebar {
+    position: fixed;
+    width: 220px;
+    height: 100vh;
+    background: white;
+    border-right: 1px solid #ddd;
+    padding: 25px 15px;
 }
 
-.logo{
-    color:#003399;
-    font-weight:bold;
-    font-size:18px;
-    margin-bottom:30px;
+.logo {
+    color: #003399;
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 30px;
 }
 
-.menu a{
-    display:block;
-    padding:12px;
-    margin-bottom:5px;
-    text-decoration:none;
-    color:#444;
-    border-radius:6px;
+.menu a {
+    display: block;
+    padding: 12px;
+    margin-bottom: 5px;
+    text-decoration: none;
+    color: #444;
+    border-radius: 6px;
 }
 
 .menu a:hover,
-.menu a.active{
-    background:#eef4ff;
-    color:#003399;
+.menu a.active {
+    background: #eef4ff;
+    color: #003399;
 }
 
-.main{
-    margin-left:220px;
+.main {
+    margin-left: 220px;
 }
 
-.header{
-    height:60px;
-    background:white;
-    border-bottom:1px solid #ddd;
-    padding:0 30px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
+.header {
+    height: 60px;
+    background: white;
+    border-bottom: 1px solid #ddd;
+    padding: 0 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
-.content{
-    padding:35px;
+.content {
+    padding: 35px;
 }
 
-h1,h2,h3{
-    color:#003399;
+h1,
+h2,
+h3 {
+    color: #003399;
 }
 
-.cards{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:20px;
+.cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
 }
 
-.card{
-    background:#fff;
-    border:1px solid #ddd;
-    border-radius:8px;
-    padding:22px;
+.card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 22px;
 }
 
-.card a{
-    color:#003399;
-    text-decoration:none;
-    font-weight:bold;
+.card a {
+    color: #003399;
+    text-decoration: none;
+    font-weight: bold;
 }
 
-.rooms{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:20px;
+.rooms {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
 }
 
-.status{
-    display:inline-block;
-    padding:5px 10px;
-    border-radius:15px;
-    font-size:12px;
+.status {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
 }
 
-.available{
-    background:#e5f7eb;
-    color:#207a45;
+.available {
+    background: #e5f7eb;
+    color: #207a45;
 }
 
-.busy{
-    background:#ffe5e5;
-    color:#d32f2f;
+.busy {
+    background: #ffe5e5;
+    color: #d32f2f;
 }
 
-.maintenance{
-    background:#fff3cd;
-    color:#856404;
+.maintenance {
+    background: #fff3cd;
+    color: #856404;
 }
 
-.form{
-    max-width:700px;
-    background:white;
-    border:1px solid #ddd;
-    border-radius:8px;
-    padding:25px;
+.form {
+    max-width: 700px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 25px;
 }
 
-.group{
-    margin-bottom:17px;
+.group {
+    margin-bottom: 17px;
 }
 
-label{
-    display:block;
-    font-weight:bold;
-    margin-bottom:6px;
+label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 6px;
 }
 
 input,
 select,
-textarea{
-    width:100%;
-    padding:10px;
-    border:1px solid #ccc;
-    border-radius:5px;
-    font-family:Arial;
+textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-family: Arial;
 }
 
-textarea{
-    min-height:100px;
-    resize:vertical;
+textarea {
+    min-height: 100px;
+    resize: vertical;
 }
 
-.error-input{
-    border-color:#d32f2f;
+.error {
+    color: #d32f2f;
+    font-size: 13px;
+    margin-top: 5px;
 }
 
-.error{
-    color:#d32f2f;
-    font-size:13px;
-    margin-top:5px;
+.success {
+    max-width: 700px;
+    background: #e6f7ed;
+    color: #207a45;
+    padding: 12px;
+    border-radius: 5px;
+    margin-bottom: 15px;
 }
 
-.success{
-    max-width:700px;
-    background:#e6f7ed;
-    color:#207a45;
-    padding:12px;
-    border-radius:5px;
-    margin-bottom:15px;
+button {
+    background: #003399;
+    color: white;
+    border: 0;
+    padding: 11px 18px;
+    border-radius: 5px;
+    cursor: pointer;
 }
 
-button{
-    background:#003399;
-    color:#fff;
-    border:0;
-    padding:11px 18px;
-    border-radius:5px;
-    cursor:pointer;
+button:hover {
+    background: #002266;
 }
 
-button:hover{
-    background:#002266;
-}
-
-table{
-    width:100%;
-    border-collapse:collapse;
-    background:white;
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
 }
 
 th,
-td{
-    padding:12px;
-    border:1px solid #ddd;
-    text-align:left;
+td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: left;
 }
 
-th{
-    background:#003399;
-    color:white;
+th {
+    background: #003399;
+    color: white;
 }
 
-@media(max-width:800px){
+@media(max-width: 800px) {
 
-    .sidebar{
-        width:180px;
+    .sidebar {
+        width: 180px;
     }
 
-    .main{
-        margin-left:180px;
+    .main {
+        margin-left: 180px;
     }
 
     .cards,
-    .rooms{
-        grid-template-columns:1fr;
+    .rooms {
+        grid-template-columns: 1fr;
     }
 
 }
@@ -490,32 +482,32 @@ LAB MANAGEMENT
 <nav class="menu">
 
 <a href="?page=home"
-class="<?= $page=="home" ? "active" : "" ?>">
+class="<?= $page == "home" ? "active" : "" ?>">
 Trang chủ
 </a>
 
 <a href="?page=rooms"
-class="<?= $page=="rooms" ? "active" : "" ?>">
+class="<?= $page == "rooms" ? "active" : "" ?>">
 Phòng thực hành
 </a>
 
 <a href="?page=booking"
-class="<?= $page=="booking" ? "active" : "" ?>">
+class="<?= $page == "booking" ? "active" : "" ?>">
 Đặt phòng
 </a>
 
 <a href="?page=mybookings"
-class="<?= $page=="mybookings" ? "active" : "" ?>">
+class="<?= $page == "mybookings" ? "active" : "" ?>">
 Yêu cầu của tôi
 </a>
 
 <a href="?page=report"
-class="<?= $page=="report" ? "active" : "" ?>">
+class="<?= $page == "report" ? "active" : "" ?>">
 Báo hỏng thiết bị
 </a>
 
 <a href="?page=myreports"
-class="<?= $page=="myreports" ? "active" : "" ?>">
+class="<?= $page == "myreports" ? "active" : "" ?>">
 Báo hỏng của tôi
 </a>
 
@@ -537,7 +529,7 @@ Báo hỏng của tôi
 
 <div class="content">
 
-<?php if($page=="home"): ?>
+<?php if ($page == "home"): ?>
 
 <h1>Trang chủ</h1>
 
@@ -555,9 +547,7 @@ Chào mừng bạn đến với hệ thống quản lý phòng thực hành.
 
 <h3>Phòng thực hành</h3>
 
-<p>
-Xem danh sách và trạng thái các phòng.
-</p>
+<p>Xem danh sách phòng và trạng thái phòng.</p>
 
 <a href="?page=rooms">
 Xem phòng →
@@ -569,9 +559,7 @@ Xem phòng →
 
 <h3>Đặt phòng</h3>
 
-<p>
-Gửi yêu cầu sử dụng phòng thực hành.
-</p>
+<p>Gửi yêu cầu sử dụng phòng thực hành.</p>
 
 <a href="?page=booking">
 Đặt phòng →
@@ -583,9 +571,7 @@ Gửi yêu cầu sử dụng phòng thực hành.
 
 <h3>Báo hỏng</h3>
 
-<p>
-Báo cáo thiết bị gặp sự cố.
-</p>
+<p>Báo cáo thiết bị gặp sự cố.</p>
 
 <a href="?page=report">
 Báo hỏng →
@@ -595,51 +581,44 @@ Báo hỏng →
 
 </div>
 
-<?php elseif($page=="rooms"): ?>
+<?php elseif ($page == "rooms"): ?>
 
 <h1>Phòng thực hành</h1>
 
 <div class="rooms">
 
-<?php foreach($rooms as $room): ?>
+<?php foreach ($rooms as $room): ?>
 
 <?php
 
-if($room["status"]=="available"){
-    $class="available";
-    $status="Trống";
-}
-elseif($room["status"]=="booked"){
-    $class="busy";
-    $status="Đang sử dụng";
-}
-else{
-    $class="maintenance";
-    $status="Bảo trì";
+if ($room["status"] == "available") {
+    $class = "available";
+    $status = "Trống";
+} elseif ($room["status"] == "booked") {
+    $class = "busy";
+    $status = "Đang sử dụng";
+} else {
+    $class = "maintenance";
+    $status = "Bảo trì";
 }
 
 ?>
 
 <div class="card">
 
-<h3>
-<?= e($room["room_code"]) ?>
-</h3>
+<h3><?= e($room["room_code"]) ?></h3>
+
+<p><?= e($room["room_name"]) ?></p>
 
 <p>
-<?= e($room["room_name"]) ?>
-</p>
-
-<p>
-Sức chứa:
-<?= e($room["capacity"]) ?> người
+Sức chứa: <?= e($room["capacity"]) ?> người
 </p>
 
 <span class="status <?= $class ?>">
 <?= $status ?>
 </span>
 
-<?php if($room["status"]=="available"): ?>
+<?php if ($room["status"] == "available"): ?>
 
 <p>
 <a href="?page=booking">
@@ -655,11 +634,11 @@ Sức chứa:
 
 </div>
 
-<?php elseif($page=="booking"): ?>
+<?php elseif ($page == "booking"): ?>
 
 <h1>Đặt phòng</h1>
 
-<?php if($success): ?>
+<?php if ($success): ?>
 
 <div class="success">
 <?= e($success) ?>
@@ -683,17 +662,13 @@ Sức chứa:
 -- Chọn phòng --
 </option>
 
-<?php foreach($rooms as $room): ?>
+<?php foreach ($rooms as $room): ?>
 
-<?php if($room["status"]!="maintenance"): ?>
+<?php if ($room["status"] != "maintenance"): ?>
 
-<option
-value="<?= e($room["id"]) ?>"
-<?= $booking["room_id"]==$room["id"] ? "selected" : "" ?>
->
+<option value="<?= e($room["id"]) ?>">
 
-<?= e($room["room_code"]) ?>
--
+<?= e($room["room_code"]) ?> -
 <?= e($room["room_name"]) ?>
 
 </option>
@@ -704,7 +679,7 @@ value="<?= e($room["id"]) ?>"
 
 </select>
 
-<?php if(isset($errors["room_id"])): ?>
+<?php if (isset($errors["room_id"])): ?>
 
 <div class="error">
 <?= e($errors["room_id"]) ?>
@@ -718,13 +693,9 @@ value="<?= e($room["id"]) ?>"
 
 <label>Ngày</label>
 
-<input
-type="date"
-name="date"
-value="<?= e($booking["date"]) ?>"
->
+<input type="date" name="date">
 
-<?php if(isset($errors["date"])): ?>
+<?php if (isset($errors["date"])): ?>
 
 <div class="error">
 <?= e($errors["date"]) ?>
@@ -734,19 +705,13 @@ value="<?= e($booking["date"]) ?>"
 
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:15px">
-
 <div class="group">
 
 <label>Giờ bắt đầu</label>
 
-<input
-type="time"
-name="start"
-value="<?= e($booking["start"]) ?>"
->
+<input type="time" name="start">
 
-<?php if(isset($errors["start"])): ?>
+<?php if (isset($errors["start"])): ?>
 
 <div class="error">
 <?= e($errors["start"]) ?>
@@ -760,13 +725,9 @@ value="<?= e($booking["start"]) ?>"
 
 <label>Giờ kết thúc</label>
 
-<input
-type="time"
-name="end"
-value="<?= e($booking["end"]) ?>"
->
+<input type="time" name="end">
 
-<?php if(isset($errors["end"])): ?>
+<?php if (isset($errors["end"])): ?>
 
 <div class="error">
 <?= e($errors["end"]) ?>
@@ -776,17 +737,13 @@ value="<?= e($booking["end"]) ?>"
 
 </div>
 
-</div>
-
 <div class="group">
 
 <label>Mục đích</label>
 
-<textarea
-name="purpose"
-><?= e($booking["purpose"]) ?></textarea>
+<textarea name="purpose"></textarea>
 
-<?php if(isset($errors["purpose"])): ?>
+<?php if (isset($errors["purpose"])): ?>
 
 <div class="error">
 <?= e($errors["purpose"]) ?>
@@ -804,51 +761,39 @@ Gửi yêu cầu
 
 </div>
 
-<?php elseif($page=="mybookings"): ?>
+<?php elseif ($page == "mybookings"): ?>
 
 <h1>Yêu cầu đặt phòng của tôi</h1>
 
 <table>
 
 <tr>
-
 <th>Phòng</th>
 <th>Bắt đầu</th>
 <th>Kết thúc</th>
 <th>Mục đích</th>
 <th>Trạng thái</th>
-
 </tr>
 
-<?php foreach($my_bookings as $item): ?>
+<?php foreach ($my_bookings as $item): ?>
 
 <tr>
 
-<td>
-<?= e($item["room_code"]) ?>
-</td>
+<td><?= e($item["room_code"]) ?></td>
 
-<td>
-<?= e($item["start_time"]) ?>
-</td>
+<td><?= e($item["start_time"]) ?></td>
 
-<td>
-<?= e($item["end_time"]) ?>
-</td>
+<td><?= e($item["end_time"]) ?></td>
 
-<td>
-<?= e($item["purpose"]) ?>
-</td>
+<td><?= e($item["purpose"]) ?></td>
 
-<td>
-<?= e($item["status"]) ?>
-</td>
+<td><?= e($item["status"]) ?></td>
 
 </tr>
 
 <?php endforeach; ?>
 
-<?php if(empty($my_bookings)): ?>
+<?php if (empty($my_bookings)): ?>
 
 <tr>
 
@@ -862,11 +807,11 @@ Bạn chưa có yêu cầu đặt phòng.
 
 </table>
 
-<?php elseif($page=="report"): ?>
+<?php elseif ($page == "report"): ?>
 
 <h1>Báo hỏng thiết bị</h1>
 
-<?php if($success): ?>
+<?php if ($success): ?>
 
 <div class="success">
 <?= e($success) ?>
@@ -890,15 +835,11 @@ Bạn chưa có yêu cầu đặt phòng.
 -- Chọn thiết bị --
 </option>
 
-<?php foreach($devices as $device): ?>
+<?php foreach ($devices as $device): ?>
 
-<option
-value="<?= e($device["id"]) ?>"
-<?= $report["device_id"]==$device["id"] ? "selected" : "" ?>
->
+<option value="<?= e($device["id"]) ?>">
 
-<?= e($device["device_code"]) ?>
--
+<?= e($device["device_code"]) ?> -
 <?= e($device["device_name"]) ?>
 
 </option>
@@ -907,7 +848,7 @@ value="<?= e($device["id"]) ?>"
 
 </select>
 
-<?php if(isset($errors["device_id"])): ?>
+<?php if (isset($errors["device_id"])): ?>
 
 <div class="error">
 <?= e($errors["device_id"]) ?>
@@ -924,9 +865,9 @@ value="<?= e($device["id"]) ?>"
 <textarea
 name="description"
 placeholder="Mô tả tình trạng thiết bị..."
-><?= e($report["description"]) ?></textarea>
+></textarea>
 
-<?php if(isset($errors["description"])): ?>
+<?php if (isset($errors["description"])): ?>
 
 <div class="error">
 <?= e($errors["description"]) ?>
@@ -944,28 +885,25 @@ Gửi báo hỏng
 
 </div>
 
-<?php elseif($page=="myreports"): ?>
+<?php elseif ($page == "myreports"): ?>
 
 <h1>Báo hỏng của tôi</h1>
 
 <table>
 
 <tr>
-
 <th>Thiết bị</th>
 <th>Nội dung</th>
 <th>Trạng thái</th>
 <th>Ngày báo</th>
-
 </tr>
 
-<?php foreach($my_reports as $item): ?>
+<?php foreach ($my_reports as $item): ?>
 
 <tr>
 
 <td>
-<?= e($item["device_code"]) ?>
--
+<?= e($item["device_code"]) ?> -
 <?= e($item["device_name"]) ?>
 </td>
 
@@ -985,7 +923,7 @@ Gửi báo hỏng
 
 <?php endforeach; ?>
 
-<?php if(empty($my_reports)): ?>
+<?php if (empty($my_reports)): ?>
 
 <tr>
 
