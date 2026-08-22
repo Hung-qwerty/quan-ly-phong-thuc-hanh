@@ -24,7 +24,7 @@ SET foreign_key_checks = 0;
 -- --------------------------------------------------------
 
 --
--- Xóa bảng cũ theo thứ tự an toàn (tránh lỗi khóa ngoại) trước khi tạo mới
+-- Xóa bảng cũ theo thứ tự an toàn trước khi tạo mới
 --
 DROP TABLE IF EXISTS `maintenance_history`;
 DROP TABLE IF EXISTS `maintenance`;
@@ -38,7 +38,7 @@ DROP TABLE IF EXISTS `users`;
 -- --------------------------------------------------------
 
 --
--- 1. TV1: Bảng `users` (Quản lý tài khoản & phân quyền)
+-- 1. Bảng `users` (Có thêm cột `status` để duyệt tài khoản sinh viên)
 --
 CREATE TABLE `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -46,13 +46,14 @@ CREATE TABLE `users` (
   `password` varchar(255) NOT NULL,
   `full_name` varchar(100) NOT NULL,
   `role` enum('student','staff','admin') NOT NULL DEFAULT 'student',
+  `status` enum('pending','active','rejected') NOT NULL DEFAULT 'active',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- 2. TV3 (Dùng chung): Bảng `rooms` (Quản lý phòng thực hành)
+-- 2. Bảng `rooms` (Quản lý phòng thực hành)
 --
 CREATE TABLE `rooms` (
   `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -65,7 +66,7 @@ CREATE TABLE `rooms` (
 -- --------------------------------------------------------
 
 --
--- 3. TV4: Bảng `device_types` (Loại thiết bị)
+-- 3. Bảng `device_types` (Loại thiết bị)
 --
 CREATE TABLE `device_types` (
   `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -75,7 +76,7 @@ CREATE TABLE `device_types` (
 -- --------------------------------------------------------
 
 --
--- 4. TV4: Bảng `devices` (Thiết bị trong phòng)
+-- 4. Bảng `devices` (Thiết bị trong phòng)
 --
 CREATE TABLE `devices` (
   `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -91,7 +92,7 @@ CREATE TABLE `devices` (
 -- --------------------------------------------------------
 
 --
--- 5. TV2 & TV3 (Dùng chung): Bảng `bookings` (Quản lý đặt phòng / Lịch tổng quan)
+-- 5. Bảng `bookings` (Quản lý đặt phòng / Lịch tổng quan)
 --
 CREATE TABLE `bookings` (
   `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -109,7 +110,7 @@ CREATE TABLE `bookings` (
 -- --------------------------------------------------------
 
 --
--- 6. TV2: Bảng `device_reports` (Báo cáo sự cố thiết bị)
+-- 6. Bảng `device_reports` (Báo cáo sự cố thiết bị)
 --
 CREATE TABLE `device_reports` (
   `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -125,7 +126,7 @@ CREATE TABLE `device_reports` (
 -- --------------------------------------------------------
 
 --
--- 7. TV5: Bảng `maintenance` (Quản lý bảo trì thiết bị)
+-- 7. Bảng `maintenance` (Quản lý bảo trì thiết bị)
 --
 CREATE TABLE `maintenance` (
   `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -141,7 +142,7 @@ CREATE TABLE `maintenance` (
 -- --------------------------------------------------------
 
 --
--- 8. TV5: Bảng `maintenance_history` (Lịch sử bảo trì chi tiết)
+-- 8. Bảng `maintenance_history` (Lịch sử bảo trì chi tiết)
 --
 CREATE TABLE `maintenance_history` (
   `id` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -159,7 +160,7 @@ CREATE TABLE `maintenance_history` (
 -- --------------------------------------------------------
 
 --
--- Dữ liệu mẫu (Seed Data) ban đầu cho hệ thống
+-- Dữ liệu mẫu ban đầu
 --
 
 INSERT INTO `rooms` (`id`, `room_code`, `room_name`, `capacity`, `status`) VALUES
@@ -167,14 +168,10 @@ INSERT INTO `rooms` (`id`, `room_code`, `room_name`, `capacity`, `status`) VALUE
 (2, 'P102', 'Phòng Lab Cơ Sở Dữ Liệu', 35, 'available'),
 (3, 'P103', 'Phòng Lab Nhúng & IoT', 30, 'maintenance');
 
-INSERT INTO `users` (`id`, `username`, `password`, `full_name`, `role`) VALUES
-(1, 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Quản Trị Viên', 'admin'),
-(2, 'staff01', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Cán Bộ Lab Nguyễn Văn A', 'staff'),
-(3, 'student01', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Sinh Viên Trần Văn B', 'student');
+INSERT INTO `users` (`id`, `username`, `password`, `full_name`, `role`, `status`) VALUES
+(1, 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Quản Trị Viên', 'admin', 'active'),
+(2, 'staff01', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Cán Bộ Lab Nguyễn Văn A', 'staff', 'active'),
+(3, 'student01', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Sinh Viên Trần Văn B', 'student', 'active');
 
 SET foreign_key_checks = 1;
 COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
