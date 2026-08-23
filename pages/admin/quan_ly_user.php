@@ -7,10 +7,8 @@ $u = "";
 $n = "";
 $r = "staff";
 
-// Xác định tab đang chọn (mặc định là 'internal' nếu không có tab trên URL)
 $tab = $_GET['tab'] ?? 'internal';
 
-// 1. Xử lý DUYỆT tài khoản sinh viên
 if (isset($_GET['action']) && $_GET['action'] == 'approve' && isset($_GET['id'])) {
     $approve_id = intval($_GET['id']);
     $stmt_app = $conn->prepare("UPDATE users SET status = 'active' WHERE id = ?");
@@ -19,7 +17,6 @@ if (isset($_GET['action']) && $_GET['action'] == 'approve' && isset($_GET['id'])
     exit;
 }
 
-// 2. Xử lý XÓA tài khoản
 if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
     $delete_id = intval($_GET['id']);
     $stmt_del = $conn->prepare("DELETE FROM users WHERE id = ?");
@@ -33,7 +30,6 @@ if (isset($_GET['msg'])) {
     if ($_GET['msg'] == 'deleted') $success_msg = "Xóa tài khoản thành công!";
 }
 
-// 3. Xử lý THÊM tài khoản nội bộ (Admin / Staff)
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_internal_user'])) {
     $u = trim($_POST['username'] ?? '');
     $n = trim($_POST['fullname'] ?? '');
@@ -59,7 +55,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_internal_user'])) 
     }
 }
 
-// Lấy dữ liệu
 $stmt_students = $conn->query("SELECT * FROM users WHERE role = 'student' ORDER BY (status = 'pending') DESC, id DESC");
 $students = $stmt_students->fetchAll(PDO::FETCH_ASSOC);
 
@@ -81,8 +76,7 @@ function getStatusBadge($status) {
     <style>
         body { background-color: #f8f9fa; font-family: 'Segoe UI', Arial, sans-serif; }
         :root { --hnmu-blue: #003399; }
-        
-        /* Sidebar styling giống mẫu */
+
         .sidebar {
             width: 260px;
             height: 100vh;
@@ -113,7 +107,6 @@ function getStatusBadge($status) {
             color: var(--hnmu-blue);
         }
 
-        /* Main content styling */
         .main-content {
             margin-left: 260px;
             padding: 30px;
@@ -146,7 +139,6 @@ function getStatusBadge($status) {
 </head>
 <body>
 
-    <!-- SIDEBAR BÊN TRÁI -->
     <div class="sidebar">
         <div class="brand">LAB MANAGEMENT</div>
         <ul class="nav flex-column mt-3">
@@ -166,13 +158,11 @@ function getStatusBadge($status) {
         </ul>
     </div>
 
-    <!-- NAVBAR PHÍA TRÊN -->
     <div class="top-navbar">
         <span class="text-muted small">Admin Portal</span>
         <span class="fw-bold text-primary">Admin Hệ Thống</span>
     </div>
 
-    <!-- KHU VỰC HIỂN THỊ NỘI DUNG CHÍNH (BÊN PHẢI) -->
     <div class="main-content">
         
         <?php if (!empty($success_msg)): ?>
@@ -186,7 +176,6 @@ function getStatusBadge($status) {
             <div class="alert alert-danger"><?php echo $errors['username']; ?></div>
         <?php endif; ?>
 
-        <!-- MỤC 1: QUẢN LÝ TÀI KHOẢN NỘI BỘ (ADMIN / STAFF) -->
         <?php if ($tab == 'internal'): ?>
             <div class="card card-custom p-4 mb-4">
                 <h4 class="text-primary mb-3">Thêm mới tài khoản Nội bộ</h4>
@@ -252,7 +241,6 @@ function getStatusBadge($status) {
             </div>
         <?php endif; ?>
 
-        <!-- MỤC 2: DUYỆT TÀI KHOẢN SINH VIÊN -->
         <?php if ($tab == 'students'): ?>
             <div class="card card-custom p-4">
                 <h4 class="text-primary mb-3">Danh sách & Phê duyệt tài khoản Sinh viên</h4>
