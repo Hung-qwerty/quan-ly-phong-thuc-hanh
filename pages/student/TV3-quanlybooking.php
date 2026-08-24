@@ -1,524 +1,347 @@
 <?php
-$ds_phong = [
-    ["id" => "P101", "ten" => "Phòng Thực Hành 101", "suc_chua" => 40],
-    ["id" => "P105", "ten" => "Phòng Thực Hành 105", "suc_chua" => 30],
-    ["id" => "P203", "ten" => "Phòng Máy Tính 203", "suc_chua" => 50],
-];
+session_start();
 
-$ds_booking = [
-    [
-        "id" => 1,
-        "user_id" => 101,
-        "room_name" => "P101",
-        "booking_date" => "2026-08-20",
-        "time_slot" => "08:00 - 10:00",
-        "status" => "Đã duyệt",
-        "created_at" => "2026-08-15 09:00:00"
-    ],
-    [
-        "id" => 2,
-        "user_id" => 101,
-        "room_name" => "P203",
-        "booking_date" => "2026-08-22",
-        "time_slot" => "13:00 - 15:00",
-        "status" => "Chờ duyệt",
-        "created_at" => "2026-08-16 10:30:00"
-    ],
-    [
-        "id" => 3,
-        "user_id" => 102,
-        "room_name" => "P105",
-        "booking_date" => "2026-08-20",
-        "time_slot" => "08:00 - 10:00",
-        "status" => "Đã duyệt",
-        "created_at" => "2026-08-14 14:20:00"
-    ]
-];
+$host = "127.0.0.1";
+$dbname = "quan_ly_phong_thuc_hanh";
+$username = "root";
+$password = "";
 
-$user_id_hien_tai = 101;
-$message = "";
+try {
+    $pdo = new PDO(
+        "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
+        $username,
+        $password
+    );
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    die("Không thể kết nối database: " . $e->getMessage());
+}
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['btn_huy_booking'])) {
-    $booking_id_huy = (int)$_POST['booking_id'];
-    $today = date('Y-m-d');
+function e($value) {
+    return htmlspecialchars($value ?? "", ENT_QUOTES, "UTF-8");
+}
 
-    foreach ($ds_booking as &$item) {
-        if ($item['id'] === $booking_id_huy && $item['user_id'] === $user_id_hien_tai) {
-            if ($item['status'] === 'Chờ duyệt' || $item['booking_date'] >= $today) {
-                $item['status'] = 'Đã hủy';
-                $message = "Đã hủy thành công đơn đặt phòng #" . $booking_id_huy;
+$user_id = $_SESSION["user_id"] ?? 3;
+$page = $_GET["page"] ?? "home";
+
+$errors = [];
+$success = "";
+
+$stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+$stmt->execute([$user_id]);
+$user = $stmt->fetch();
+
+if (!$user) {
+    die("Không tìm thấy người dùng.");
+}
+
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $action = $_POST["action"] ?? "";
+
+    if ($action === "cancel_booking") {
+        $page = "mybookings";
+        $booking_id = $_POST["booking_id"] ?? 0;
+
+        $stmt = $pdo->prepare("
+            SELECT id, start_time, status 
+            FROM bookings 
+            WHERE id = ? AND user_id = ?
+        ");
+        $stmt->execute([$booking_id, $user_id]);
+        $booking = $stmt->fetch();
+
+        if ($booking) {
+            $now = date("Y-m-d H:i:s");
+            if ($booking["status"] === "pending" || $booking["start_time"] > $now) {
+                $stmt = $pdo->prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?");
+                $stmt->execute([$booking_id]);
+                $success = "Hủy yêu cầu đặt phòng thành công.";
             } else {
-                $message = "Không thể hủy do yêu cầu này đã/đang thực hiện!";
-            }
-            break;
-        }
-    }
-    unset($item);
-}
-
-$page = $_GET['page'] ?? 'home';
-$search_date = $_GET['search_date'] ?? '';
-$search_time = $_GET['search_time'] ?? '';
-
-$phong_trong = [];
-if (!empty($search_date) && !empty($search_time)) {
-    foreach ($ds_phong as $phong) {
-        $is_busy = false;
-        foreach ($ds_booking as $b) {
-            if ($b['room_name'] === $phong['id'] && 
-                $b['booking_date'] === $search_date && 
-                $b['time_slot'] === $search_time && 
-                $b['status'] !== 'Đã hủy') {
-                $is_busy = true;
-                break;
+                $errors["cancel"] = "Không thể hủy yêu cầu đã/đang diễn ra hoặc đã bị từ chối.";
             }
         }
-        if (!$is_busy) {
-            $phong_trong[] = $phong;
-        }
     }
 }
 
-function hienThiTrangThai($trang_thai) {
-    switch ($trang_thai) {
-        case "Đã duyệt":
-            return "<span class='badge bg-success'>● Đã duyệt</span>";
-        case "Chờ duyệt":
-            return "<span class='badge bg-warning text-dark'>● Chờ duyệt</span>";
-        default:
-            return "<span class='badge bg-secondary'>● Đã hủy</span>";
-    }
+$stmt = $pdo->query("SELECT id, room_code, room_name, capacity, status FROM rooms ORDER BY room_code");
+$rooms = $stmt->fetchAll();
+
+$search_date = $_GET["date"] ?? "";
+$search_start = $_GET["start"] ?? "";
+$search_end = $_GET["end"] ?? "";
+$available_rooms = [];
+
+if ($search_date && $search_start && $search_end) {
+    $start_time = $search_date . " " . $search_start . ":00";
+    $end_time = $search_date . " " . $search_end . ":00";
+
+    $stmt = $pdo->prepare("
+        SELECT * FROM rooms 
+        WHERE status != 'maintenance' 
+        AND id NOT IN (
+            SELECT room_id FROM bookings 
+            WHERE status IN ('pending', 'approved') 
+            AND start_time < ? 
+            AND end_time > ?
+        )
+        ORDER BY room_code
+    ");
+    $stmt->execute([$end_time, $start_time]);
+    $available_rooms = $stmt->fetchAll();
 }
+
+$stmt = $pdo->prepare("
+    SELECT b.id, r.room_code, r.room_name, b.start_time, b.end_time, b.purpose, b.status 
+    FROM bookings b 
+    JOIN rooms r ON b.room_id = r.id 
+    WHERE b.user_id = ? 
+    ORDER BY b.start_time DESC
+");
+$stmt->execute([$user_id]);
+$my_bookings = $stmt->fetchAll();
+
+$stmt = $pdo->query("
+    SELECT b.id, r.room_code, r.room_name, u.full_name, b.start_time, b.end_time, b.purpose, b.status 
+    FROM bookings b 
+    JOIN rooms r ON b.room_id = r.id 
+    JOIN users u ON b.user_id = u.id 
+    WHERE b.status = 'approved' 
+    ORDER BY b.start_time DESC
+");
+$schedule_list = $stmt->fetchAll();
 ?>
 
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Quản Lý Phòng Thực Hành</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Quản lý phòng thực hành - Phi</title>
     <style>
-        :root {
-            --sidebar-width: 250px;
-            --primary-blue: #003399;
-            --bg-light: #f8f9fa;
-        }
-
-        body {
-            background-color: var(--bg-light);
-            font-family: 'Segoe UI', Arial, sans-serif;
-            margin: 0;
-        }
-
-        .sidebar {
-            width: var(--sidebar-width);
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            background-color: #ffffff;
-            border-right: 1px solid #e5e7eb;
-            padding: 1.5rem 1rem;
-            z-index: 100;
-        }
-
-        .sidebar-brand {
-            font-size: 1.05rem;
-            font-weight: 800;
-            color: var(--primary-blue);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 2rem;
-            text-decoration: none;
-        }
-
-        .sidebar-menu {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .sidebar-menu a {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 14px;
-            color: #4b5563;
-            text-decoration: none;
-            font-weight: 500;
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-
-        .sidebar-menu a:hover {
-            background-color: #f3f4f6;
-            color: var(--primary-blue);
-        }
-
-        .sidebar-menu a.active {
-            background-color: #e8f0fe;
-            color: var(--primary-blue);
-            font-weight: 600;
-        }
-
-        .main-wrapper {
-            margin-left: var(--sidebar-width);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .top-navbar {
-            height: 60px;
-            background-color: #ffffff;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 2rem;
-        }
-
-        .content-area {
-            padding: 2.5rem;
-            flex-grow: 1;
-        }
-
-        .card-custom {
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        }
-
-        .feature-card {
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 1.5rem;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .feature-card h5 {
-            color: #0d2838;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .feature-card p {
-            color: #6b7280;
-            font-size: 0.9rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .feature-card a {
-            font-weight: 600;
-            text-decoration: none;
-            color: var(--primary-blue);
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: #f4f7f9; color: #333; }
+        .sidebar { position: fixed; width: 220px; height: 100vh; background: white; border-right: 1px solid #ddd; padding: 25px 15px; }
+        .logo { color: #003399; font-weight: bold; font-size: 18px; margin-bottom: 30px; }
+        .menu a { display: block; padding: 12px; margin-bottom: 5px; text-decoration: none; color: #444; border-radius: 6px; }
+        .menu a:hover, .menu a.active { background: #eef4ff; color: #003399; }
+        .main { margin-left: 220px; }
+        .header { height: 60px; background: white; border-bottom: 1px solid #ddd; padding: 0 30px; display: flex; align-items: center; justify-content: space-between; }
+        .content { padding: 35px; }
+        h1, h2, h3 { color: #003399; }
+        .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .card { background: white; border: 1px solid #ddd; border-radius: 8px; padding: 22px; }
+        .card a { color: #003399; text-decoration: none; font-weight: bold; }
+        .rooms { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .status { display: inline-block; padding: 5px 10px; border-radius: 15px; font-size: 12px; }
+        .available { background: #e5f7eb; color: #207a45; }
+        .busy { background: #ffe5e5; color: #d32f2f; }
+        .maintenance { background: #fff3cd; color: #856404; }
+        .form { max-width: 800px; background: white; border: 1px solid #ddd; border-radius: 8px; padding: 25px; margin-bottom: 25px; }
+        .form-row { display: flex; gap: 15px; }
+        .group { flex: 1; margin-bottom: 17px; }
+        label { display: block; font-weight: bold; margin-bottom: 6px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: Arial; }
+        .success { max-width: 800px; background: #e6f7ed; color: #207a45; padding: 12px; border-radius: 5px; margin-bottom: 15px; }
+        .error { max-width: 800px; background: #ffe5e5; color: #d32f2f; padding: 12px; border-radius: 5px; margin-bottom: 15px; }
+        button, .btn { background: #003399; color: white; border: 0; padding: 10px 18px; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; }
+        button:hover { background: #002266; }
+        .btn-danger { background: #d32f2f; }
+        .btn-danger:hover { background: #9a0007; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background: #003399; color: white; }
+        @media(max-width: 800px) {
+            .sidebar { width: 180px; }
+            .main { margin-left: 180px; }
+            .cards, .rooms { grid-template-columns: 1fr; }
+            .form-row { flex-direction: column; }
         }
     </style>
 </head>
 <body>
 
-<div class="sidebar">
-    <a href="?page=home" class="sidebar-brand">
-        🏫 LAB MANAGEMENT
-    </a>
-    <ul class="sidebar-menu">
-        <li>
-            <a href="?page=home" class="<?= $page === 'home' ? 'active' : '' ?>">
-                🏠 Trang chủ
-            </a>
-        </li>
-        <li>
-            <a href="?page=rooms" class="<?= $page === 'rooms' ? 'active' : '' ?>">
-                🏫 Phòng thực hành
-            </a>
-        </li>
-        <li>
-            <a href="?page=booking" class="<?= $page === 'booking' ? 'active' : '' ?>">
-                📅 Đặt phòng
-            </a>
-        </li>
-        <li>
-            <a href="?page=my_bookings" class="<?= $page === 'my_bookings' ? 'active' : '' ?>">
-                📋 Yêu cầu của tôi
-            </a>
-        </li>
-        <li>
-            <a href="?page=schedule" class="<?= $page === 'schedule' ? 'active' : '' ?>">
-                📊 Lịch tổng quan
-            </a>
-        </li>
-        <li>
-            <a href="?page=report" class="<?= $page === 'report' ? 'active' : '' ?>">
-                🔧 Báo hỏng
-            </a>
-        </li>
-    </ul>
-</div>
+<aside class="sidebar">
+    <div class="logo">LAB MANAGEMENT</div>
+    <nav class="menu">
+        <a href="?page=home" class="<?= $page == 'home' ? 'active' : '' ?>">Trang chủ</a>
+        <a href="?page=rooms" class="<?= $page == 'rooms' ? 'active' : '' ?>">Danh sách phòng</a>
+        <a href="?page=check" class="<?= $page == 'check' ? 'active' : '' ?>">Kiểm tra phòng trống</a>
+        <a href="?page=schedule" class="<?= $page == 'schedule' ? 'active' : '' ?>">Lịch phòng</a>
+        <a href="?page=mybookings" class="<?= $page == 'mybookings' ? 'active' : '' ?>">Yêu cầu của tôi</a>
+    </nav>
+</aside>
 
-<div class="main-wrapper">
-    <header class="top-navbar">
-        <div class="text-muted small fw-semibold">Student Portal</div>
-        <div class="fw-bold text-dark">
-            👤 Sinh viên (ID: <?= $user_id_hien_tai; ?>)
-        </div>
+<main class="main">
+    <header class="header">
+        <span>Student Portal</span>
+        <strong><?= e($user["full_name"]) ?></strong>
     </header>
 
-    <main class="content-area">
+    <div class="content">
 
-        <?php if (!empty($message)): ?>
-            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-                <?= htmlspecialchars($message); ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <?php if ($page == "home"): ?>
+            <h1>Trang chủ</h1>
+            <p>Xin chào <strong><?= e($user["full_name"]) ?></strong>.</p>
+            <p>Chào mừng bạn đến với hệ thống theo dõi lịch và quản lý yêu cầu phòng thực hành.</p>
+
+            <div class="cards">
+                <div class="card">
+                    <h3>Danh sách phòng</h3>
+                    <p>Xem toàn bộ phòng thực hành và trạng thái phòng hiện tại.</p>
+                    <a href="?page=rooms">Xem danh sách →</a>
+                </div>
+                <div class="card">
+                    <h3>Kiểm tra phòng trống</h3>
+                    <p>Tra cứu nhanh phòng còn trống theo mốc ngày và khung giờ cụ thể.</p>
+                    <a href="?page=check">Kiểm tra ngay →</a>
+                </div>
+                <div class="card">
+                    <h3>Lịch phòng</h3>
+                    <p>Xem toàn bộ thời gian biểu và lịch mượn phòng đã được phê duyệt.</p>
+                    <a href="?page=schedule">Xem lịch phòng →</a>
+                </div>
+                <div class="card">
+                    <h3>Yêu cầu của tôi</h3>
+                    <p>Quản lý các yêu cầu mượn phòng cá nhân và thực hiện hủy khi chưa bắt đầu.</p>
+                    <a href="?page=mybookings">Xem yêu cầu →</a>
+                </div>
             </div>
-        <?php endif; ?>
 
-        <?php if ($page === 'home'): ?>
-            <div class="mb-4">
-                <h2 class="fw-bold mb-1" style="color: #0d2838;">Xin chào, Sinh viên! 👋</h2>
-                <p class="text-secondary">Chào mừng bạn đến với hệ thống quản lý phòng thực hành.</p>
+        <?php elseif ($page == "rooms"): ?>
+            <h1>Danh sách phòng thực hành</h1>
+            <div class="rooms">
+                <?php foreach ($rooms as $room): ?>
+                    <?php
+                        if ($room["status"] == "available") { $class = "available"; $status = "Trống"; }
+                        elseif ($room["status"] == "booked") { $class = "busy"; $status = "Đang sử dụng"; }
+                        else { $class = "maintenance"; $status = "Bảo trì"; }
+                    ?>
+                    <div class="card">
+                        <h3><?= e($room["room_code"]) ?></h3>
+                        <p><?= e($room["room_name"]) ?></p>
+                        <p>Sức chứa: <?= e($room["capacity"]) ?> người</p>
+                        <span class="status <?= $class ?>"><?= $status ?></span>
+                    </div>
+                <?php endforeach; ?>
             </div>
 
-            <div class="row g-4 mt-1">
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div>
-                            <h5>🏫 Phòng thực hành</h5>
-                            <p>Xem thông tin phòng thực hành.</p>
+        <?php elseif ($page == "check"): ?>
+            <h1>Kiểm tra phòng còn trống theo ngày/giờ</h1>
+            <div class="form">
+                <form method="GET">
+                    <input type="hidden" name="page" value="check">
+                    <div class="form-row">
+                        <div class="group">
+                            <label>Chọn ngày</label>
+                            <input type="date" name="date" value="<?= e($search_date) ?>" required>
                         </div>
-                        <a href="?page=rooms">Xem ngay →</a>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div>
-                            <h5>📅 Đặt phòng</h5>
-                            <p>Tạo yêu cầu đặt phòng mới.</p>
+                        <div class="group">
+                            <label>Giờ bắt đầu</label>
+                            <input type="time" name="start" value="<?= e($search_start) ?>" required>
                         </div>
-                        <a href="?page=booking">Đặt phòng →</a>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div>
-                            <h5>📋 Yêu cầu của tôi</h5>
-                            <p>Quản lý các yêu cầu đặt phòng cá nhân.</p>
+                        <div class="group">
+                            <label>Giờ kết thúc</label>
+                            <input type="time" name="end" value="<?= e($search_end) ?>" required>
                         </div>
-                        <a href="?page=my_bookings">Quản lý →</a>
                     </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div>
-                            <h5>📊 Lịch tổng quan</h5>
-                            <p>Tra cứu phòng trống và xem lịch toàn hệ thống.</p>
-                        </div>
-                        <a href="?page=schedule">Xem lịch →</a>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="feature-card">
-                        <div>
-                            <h5>🔧 Báo hỏng</h5>
-                            <p>Gửi báo cáo thiết bị gặp sự cố.</p>
-                        </div>
-                        <a href="?page=report">Báo hỏng →</a>
-                    </div>
-                </div>
-            </div>
-
-        <?php elseif ($page === 'rooms'): ?>
-            <h3 class="fw-bold mb-4" style="color: #0d2838;">Danh Sách Phòng Thực Hành</h3>
-            <div class="card card-custom p-5 text-center text-muted">
-                <p class="mb-0">Nội dung trang Phòng thực hành đang được cập nhật...</p>
-            </div>
-
-        <?php elseif ($page === 'booking'): ?>
-            <h3 class="fw-bold mb-4" style="color: #0d2838;">Đặt Phòng Thực Hành</h3>
-            <div class="card card-custom p-5 text-center text-muted">
-                <p class="mb-0">Nội dung trang Đặt phòng đang được cập nhật...</p>
-            </div>
-
-        <?php elseif ($page === 'my_bookings'): ?>
-            <h3 class="fw-bold mb-4" style="color: #0d2838;">Các Yêu Cầu Đặt Phòng Của Tôi</h3>
-
-            <div class="card card-custom p-4">
-                <div class="table-responsive">
-                    <table class="table table-bordered table-hover align-middle mb-0 text-center">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Phòng</th>
-                                <th>Ngày</th>
-                                <th>Thời gian</th>
-                                <th>Trạng thái</th>
-                                <th>Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php 
-                            $today = date('Y-m-d');
-                            $has_item = false;
-
-                            foreach ($ds_booking as $item): 
-                                if ($item['user_id'] === $user_id_hien_tai):
-                                    $has_item = true;
-                                    $can_cancel = ($item['status'] === 'Chờ duyệt' || ($item['status'] === 'Đã duyệt' && $item['booking_date'] >= $today));
-                            ?>
-                                <tr>
-                                    <td class="fw-bold"><?= htmlspecialchars($item['room_name']); ?></td>
-                                    <td><?= date('d/m/Y', strtotime($item['booking_date'])); ?></td>
-                                    <td><?= htmlspecialchars($item['time_slot']); ?></td>
-                                    <td><?= hienThiTrangThai($item['status']); ?></td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-info text-white me-1" data-bs-toggle="modal" data-bs-target="#modalDetail<?= $item['id']; ?>">
-                                            Chi tiết
-                                        </button>
-
-                                        <?php if ($can_cancel): ?>
-                                            <form action="" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn hủy yêu cầu này?');">
-                                                <input type="hidden" name="booking_id" value="<?= $item['id']; ?>">
-                                                <button type="submit" name="btn_huy_booking" class="btn btn-sm btn-danger">Hủy</button>
-                                            </form>
-                                        <?php else: ?>
-                                            <button class="btn btn-sm btn-secondary" disabled>Hủy</button>
-                                        <?php endif; ?>
-                                    </td>
-                                </tr>
-                            <?php 
-                                endif;
-                            endforeach; 
-
-                            if (!$has_item):
-                            ?>
-                                <tr>
-                                    <td colspan="5" class="text-muted">Bạn chưa gửi yêu cầu đặt phòng nào.</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-        <?php elseif ($page === 'schedule'): ?>
-            <h3 class="fw-bold mb-4" style="color: #0d2838;">Lịch Phòng & Tra Cứu</h3>
-
-            <div class="card card-custom p-4 mb-4">
-                <h4 class="fw-bold mb-3" style="color: var(--primary-blue);">Kiểm Tra Phòng Trống Theo Ngày/Giờ</h4>
-                <form action="" method="GET" class="row g-3">
-                    <input type="hidden" name="page" value="schedule">
-                    <div class="col-md-5">
-                        <label class="form-label fw-bold">Chọn Ngày</label>
-                        <input type="date" name="search_date" class="form-control" value="<?= htmlspecialchars($search_date); ?>" required>
-                    </div>
-                    <div class="col-md-5">
-                        <label class="form-label fw-bold">Chọn Khung Giờ</label>
-                        <select name="search_time" class="form-select" required>
-                            <option value="">-- Chọn giờ --</option>
-                            <option value="08:00 - 10:00" <?= $search_time === '08:00 - 10:00' ? 'selected' : ''; ?>>08:00 - 10:00</option>
-                            <option value="10:00 - 12:00" <?= $search_time === '10:00 - 12:00' ? 'selected' : ''; ?>>10:00 - 12:00</option>
-                            <option value="13:00 - 15:00" <?= $search_time === '13:00 - 15:00' ? 'selected' : ''; ?>>13:00 - 15:00</option>
-                            <option value="15:00 - 17:00" <?= $search_time === '15:00 - 17:00' ? 'selected' : ''; ?>>15:00 - 17:00</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100" style="background-color: var(--primary-blue);">Kiểm tra</button>
-                    </div>
+                    <button type="submit">Lọc phòng trống</button>
                 </form>
-
-                <?php if (!empty($search_date) && !empty($search_time)): ?>
-                    <div class="mt-4">
-                        <h6 class="fw-bold">Kết quả phòng trống ngày <?= date('d/m/Y', strtotime($search_date)); ?> (<?= htmlspecialchars($search_time); ?>):</h6>
-                        <?php if (count($phong_trong) > 0): ?>
-                            <ul class="list-group mt-2">
-                                <?php foreach ($phong_trong as $p): ?>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <span><strong><?= htmlspecialchars($p['id']); ?></strong> - <?= htmlspecialchars($p['ten']); ?> (Sức chứa: <?= $p['suc_chua']; ?> người)</span>
-                                        <span class="badge bg-success">Còn trống</span>
-                                    </li>
-                                <?php endforeach; ?>
-                            </ul>
-                        <?php else: ?>
-                            <p class="text-danger mt-2 mb-0">Khung giờ này hiện đã kín phòng.</p>
-                        <?php endif; ?>
-                    </div>
-                <?php endif; ?>
             </div>
 
-            <div class="card card-custom p-4">
-                <h4 class="fw-bold mb-3" style="color: var(--primary-blue);">Lịch Phòng Tổng Quan</h4>
-                <div class="table-responsive">
-                    <table class="table table-bordered table-hover align-middle mb-0 text-center">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Phòng</th>
-                                <th>Ngày</th>
-                                <th>Thời gian</th>
-                                <th>Trạng thái</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($ds_booking as $item): ?>
-                                <tr>
-                                    <td class="fw-bold"><?= htmlspecialchars($item['room_name']); ?></td>
-                                    <td><?= date('d/m/Y', strtotime($item['booking_date'])); ?></td>
-                                    <td><?= htmlspecialchars($item['time_slot']); ?></td>
-                                    <td><?= hienThiTrangThai($item['status']); ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+            <?php if ($search_date && $search_start && $search_end): ?>
+                <h3>Kết quả lọc phòng trống (<?= e(date("d/m/Y", strtotime($search_date))) ?> từ <?= e($search_start) ?> đến <?= e($search_end) ?>):</h3>
+                <div class="rooms">
+                    <?php foreach ($available_rooms as $room): ?>
+                        <div class="card">
+                            <h3><?= e($room["room_code"]) ?></h3>
+                            <p><?= e($room["room_name"]) ?></p>
+                            <p>Sức chứa: <?= e($room["capacity"]) ?> người</p>
+                            <span class="status available">Khả dụng</span>
+                        </div>
+                    <?php endforeach; ?>
+                    <?php if (empty($available_rooms)): ?>
+                        <p>Không có phòng nào còn trống trong khoảng thời gian này.</p>
+                    <?php endif; ?>
                 </div>
-            </div>
+            <?php endif; ?>
 
-        <?php elseif ($page === 'report'): ?>
-            <h3 class="fw-bold mb-4" style="color: #0d2838;">Báo Hỏng Thiết Bị</h3>
-            <div class="card card-custom p-5 text-center text-muted">
-                <p class="mb-0">Nội dung trang Báo hỏng đang được cập nhật...</p>
-            </div>
+        <?php elseif ($page == "schedule"): ?>
+            <h1>Lịch sử dụng phòng thực hành</h1>
+            <table>
+                <tr>
+                    <th>STT</th>
+                    <th>Mã phòng</th>
+                    <th>Tên phòng</th>
+                    <th>Người đặt</th>
+                    <th>Thời gian bắt đầu</th>
+                    <th>Thời gian kết thúc</th>
+                    <th>Mục đích</th>
+                </tr>
+                <?php $stt = 1; foreach ($schedule_list as $item): ?>
+                    <tr>
+                        <td><?= $stt++ ?></td>
+                        <td><?= e($item["room_code"]) ?></td>
+                        <td><?= e($item["room_name"]) ?></td>
+                        <td><?= e($item["full_name"]) ?></td>
+                        <td><?= e(date('d/m/Y H:i', strtotime($item["start_time"]))) ?></td>
+                        <td><?= e(date('d/m/Y H:i', strtotime($item["end_time"]))) ?></td>
+                        <td><?= e($item["purpose"]) ?></td>
+                    </tr>
+                <?php endforeach; ?>
+                <?php if (empty($schedule_list)): ?>
+                    <tr><td colspan="7">Chưa có lịch đặt phòng nào được duyệt.</td></tr>
+                <?php endif; ?>
+            </table>
+
+        <?php elseif ($page == "mybookings"): ?>
+            <h1>Danh sách yêu cầu của tôi</h1>
+
+            <?php if ($success): ?>
+                <div class="success"><?= e($success) ?></div>
+            <?php endif; ?>
+            <?php if (isset($errors["cancel"])): ?>
+                <div class="error"><?= e($errors["cancel"]) ?></div>
+            <?php endif; ?>
+
+            <table>
+                <tr>
+                    <th>Phòng</th>
+                    <th>Thời gian bắt đầu</th>
+                    <th>Thời gian kết thúc</th>
+                    <th>Mục đích</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                </tr>
+                <?php foreach ($my_bookings as $item): ?>
+                    <?php $can_cancel = ($item["status"] === "pending" || $item["start_time"] > date("Y-m-d H:i:s")) && $item["status"] !== "cancelled"; ?>
+                    <tr>
+                        <td><?= e($item["room_code"]) ?></td>
+                        <td><?= e(date('d/m/Y H:i', strtotime($item["start_time"]))) ?></td>
+                        <td><?= e(date('d/m/Y H:i', strtotime($item["end_time"]))) ?></td>
+                        <td><?= e($item["purpose"]) ?></td>
+                        <td><?= e($item["status"]) ?></td>
+                        <td>
+                            <?php if ($can_cancel): ?>
+                                <form method="POST" style="margin:0;" onsubmit="return confirm('Bạn chắc chắn muốn hủy yêu cầu này?');">
+                                    <input type="hidden" name="action" value="cancel_booking">
+                                    <input type="hidden" name="booking_id" value="<?= $item["id"] ?>">
+                                    <button type="submit" class="btn btn-danger">Hủy yêu cầu</button>
+                                </form>
+                            <?php else: ?>
+                                <span style="color: #888; font-size: 13px;">Không thể hủy</span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                <?php if (empty($my_bookings)): ?>
+                    <tr><td colspan="6">Bạn chưa tạo yêu cầu đặt phòng nào.</td></tr>
+                <?php endif; ?>
+            </table>
         <?php endif; ?>
 
-    </main>
-</div>
+    </div>
+</main>
 
-<?php foreach ($ds_booking as $item): ?>
-    <?php if ($item['user_id'] === $user_id_hien_tai): ?>
-        <div class="modal fade" id="modalDetail<?= $item['id']; ?>" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title fw-bold">Chi Tiết Booking #<?= $item['id']; ?></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body text-start">
-                        <p><strong>Mã User (Sinh viên):</strong> <?= htmlspecialchars($user_id_hien_tai); ?></p>
-                        <p><strong>Phòng thực hành:</strong> <?= htmlspecialchars($item['room_name']); ?></p>
-                        <p><strong>Ngày đặt:</strong> <?= date('d/m/Y', strtotime($item['booking_date'])); ?></p>
-                        <p><strong>Khung giờ:</strong> <?= htmlspecialchars($item['time_slot']); ?></p>
-                        <p><strong>Trạng thái:</strong> <?= hienThiTrangThai($item['status']); ?></p>
-                        <p><strong>Thời gian tạo đơn:</strong> <?= htmlspecialchars($item['created_at']); ?></p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
-<?php endforeach; ?>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
