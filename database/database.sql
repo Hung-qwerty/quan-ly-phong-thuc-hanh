@@ -20,12 +20,6 @@ SET foreign_key_checks = 0;
 --
 -- Cơ sở dữ liệu: `quan_ly_phong_thuc_hanh`
 --
-
--- --------------------------------------------------------
-
---
--- Xóa bảng cũ theo thứ tự an toàn trước khi tạo mới
---
 DROP TABLE IF EXISTS `maintenance_history`;
 DROP TABLE IF EXISTS `maintenance`;
 DROP TABLE IF EXISTS `device_reports`;
@@ -34,8 +28,6 @@ DROP TABLE IF EXISTS `devices`;
 DROP TABLE IF EXISTS `device_types`;
 DROP TABLE IF EXISTS `rooms`;
 DROP TABLE IF EXISTS `users`;
-
--- --------------------------------------------------------
 
 --
 -- 1. Bảng `users` (Có thêm cột `status` để duyệt tài khoản sinh viên)
@@ -49,8 +41,6 @@ CREATE TABLE `users` (
   `status` enum('pending','active','rejected') NOT NULL DEFAULT 'active',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
 
 --
 -- 2. Bảng `rooms` (Quản lý phòng thực hành)
