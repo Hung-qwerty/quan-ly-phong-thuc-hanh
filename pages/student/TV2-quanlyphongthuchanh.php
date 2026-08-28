@@ -490,6 +490,7 @@ class="<?= $page == "report" ? "active" : "" ?>">
 Báo hỏng thiết bị
 </a>
 
+
 </nav>
 
 </aside>
@@ -863,10 +864,6 @@ Gửi báo hỏng
 </form>
 
 </div>
-
-<?php endif; ?>
-
-</table>
 
 <?php endif; ?>
 
