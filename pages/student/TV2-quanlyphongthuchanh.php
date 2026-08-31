@@ -226,22 +226,6 @@ $stmt = $pdo->prepare("
 $stmt->execute([$user_id]);
 $my_bookings = $stmt->fetchAll();
 
-$stmt = $pdo->prepare("
-    SELECT
-        dr.id,
-        d.device_code,
-        d.device_name,
-        dr.description,
-        dr.status,
-        dr.created_at
-    FROM device_reports dr
-    JOIN devices d ON dr.device_id = d.id
-    WHERE dr.user_id = ?
-    ORDER BY dr.created_at DESC
-");
-
-$stmt->execute([$user_id]);
-$my_reports = $stmt->fetchAll();
 
 ?>
 
@@ -506,10 +490,6 @@ class="<?= $page == "report" ? "active" : "" ?>">
 Báo hỏng thiết bị
 </a>
 
-<a href="?page=myreports"
-class="<?= $page == "myreports" ? "active" : "" ?>">
-Báo hỏng của tôi
-</a>
 
 </nav>
 
@@ -884,58 +864,6 @@ Gửi báo hỏng
 </form>
 
 </div>
-
-<?php elseif ($page == "myreports"): ?>
-
-<h1>Báo hỏng của tôi</h1>
-
-<table>
-
-<tr>
-<th>Thiết bị</th>
-<th>Nội dung</th>
-<th>Trạng thái</th>
-<th>Ngày báo</th>
-</tr>
-
-<?php foreach ($my_reports as $item): ?>
-
-<tr>
-
-<td>
-<?= e($item["device_code"]) ?> -
-<?= e($item["device_name"]) ?>
-</td>
-
-<td>
-<?= e($item["description"]) ?>
-</td>
-
-<td>
-<?= e($item["status"]) ?>
-</td>
-
-<td>
-<?= e($item["created_at"]) ?>
-</td>
-
-</tr>
-
-<?php endforeach; ?>
-
-<?php if (empty($my_reports)): ?>
-
-<tr>
-
-<td colspan="4">
-Bạn chưa có báo hỏng nào.
-</td>
-
-</tr>
-
-<?php endif; ?>
-
-</table>
 
 <?php endif; ?>
 
