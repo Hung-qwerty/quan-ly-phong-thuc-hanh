@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 $host = "127.0.0.1";
 $dbname = "quan_ly_phong_thuc_hanh";
 $username = "root";
-$password = ""; // Nếu MySQL của bạn có mật khẩu root thì nhập vào đây.
+$password = "";
 $charset = "utf8mb4";
 
 $dsn = "mysql:host={$host};dbname={$dbname};charset={$charset}";

@@ -66,11 +66,6 @@ if (
 
             $conn->beginTransaction();
 
-
-            /*
-             * Lấy thiết bị
-             */
-
             $stmt = $conn->prepare(
                 "SELECT id, device_name, status
                  FROM devices
@@ -91,11 +86,6 @@ if (
                     "Không tìm thấy thiết bị."
                 );
             }
-
-
-            /*
-             * Kiểm tra phiếu đang bảo trì
-             */
 
             $stmt = $conn->prepare(
                 "SELECT id
@@ -122,11 +112,6 @@ if (
                     "Thiết bị này đang có phiếu bảo trì."
                 );
             }
-
-
-            /*
-             * Tạo phiếu bảo trì
-             */
 
             $stmt = $conn->prepare(
                 "INSERT INTO maintenance
@@ -158,11 +143,6 @@ if (
             $maintenance_id = (int)
                 $conn->lastInsertId();
 
-
-            /*
-             * Đổi trạng thái thiết bị
-             */
-
             $stmt = $conn->prepare(
                 "UPDATE devices
                  SET status = 'Đang bảo trì'
@@ -172,11 +152,6 @@ if (
             $stmt->execute([
                 $device_id
             ]);
-
-
-            /*
-             * Tạo lịch sử bảo trì
-             */
 
             $stmt = $conn->prepare(
                 "INSERT INTO maintenance_history
@@ -227,13 +202,6 @@ if (
         }
     }
 }
-
-
-/*
-|--------------------------------------------------------------------------
-| CẬP NHẬT BẢO TRÌ
-|--------------------------------------------------------------------------
-*/
 
 if (
     $_SERVER["REQUEST_METHOD"] === "POST"
@@ -300,11 +268,6 @@ if (
 
             $conn->beginTransaction();
 
-
-            /*
-             * Lấy phiếu bảo trì
-             */
-
             $stmt = $conn->prepare(
                 "SELECT id, device_id
                  FROM maintenance
@@ -337,12 +300,6 @@ if (
                     "Phiếu bảo trì không thuộc thiết bị đã chọn."
                 );
             }
-
-
-            /*
-             * Cập nhật phiếu
-             */
-
             $stmt = $conn->prepare(
                 "UPDATE maintenance
                  SET status = ?
@@ -353,11 +310,6 @@ if (
                 $status,
                 $maintenance_id
             ]);
-
-
-            /*
-             * Cập nhật lịch sử
-             */
 
             $stmt = $conn->prepare(
                 "UPDATE maintenance_history
@@ -378,11 +330,6 @@ if (
                 $result,
                 $maintenance_id
             ]);
-
-
-            /*
-             * Nếu chưa có lịch sử thì tạo mới
-             */
 
             if ($stmt->rowCount() === 0) {
 
@@ -417,11 +364,6 @@ if (
                 ]);
             }
 
-
-            /*
-             * Xác định trạng thái thiết bị
-             */
-
             if ($status === "Hoàn thành") {
 
                 $deviceStatus =
@@ -432,11 +374,6 @@ if (
                 $deviceStatus =
                     "Đang bảo trì";
             }
-
-
-            /*
-             * Cập nhật thiết bị
-             */
 
             $stmt = $conn->prepare(
                 "UPDATE devices

@@ -253,9 +253,6 @@ foreach ($thietbi as $tb) {
 
                         </td>
 
-
-                        <!-- THAO TÁC -->
-
                         <td>
 
                             <?php
@@ -286,9 +283,6 @@ foreach ($thietbi as $tb) {
         </table>
 
     </div>
-
-
-    <!-- QUAY LẠI -->
 
     <a
         href="thietbi.php"
