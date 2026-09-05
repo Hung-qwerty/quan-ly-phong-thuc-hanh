@@ -584,7 +584,7 @@ function reportStatusText(
         <!-- TRANG CHỦ -->
 
         <a
-            href="index.php?route=room_booking&page=home"
+            href="index.php?route=bookings&page=home"
             class="<?= $page === 'home'
                 ? 'active'
                 : '' ?>"
@@ -596,7 +596,7 @@ function reportStatusText(
         <!-- TV2 -->
 
         <a
-            href="index.php?route=room_booking&page=rooms"
+            href="index.php?route=bookings&page=rooms"
             class="<?= $page === 'rooms'
                 ? 'active'
                 : '' ?>"
@@ -608,7 +608,7 @@ function reportStatusText(
         <!-- TV3 -->
 
         <a
-            href="index.php?route=room_booking&page=booking"
+            href="index.php?route=bookings&page=booking"
             class="<?= $page === 'booking'
                 ? 'active'
                 : '' ?>"
@@ -620,7 +620,7 @@ function reportStatusText(
         <!-- TV3 -->
 
         <a
-            href="index.php?route=room_booking&page=mybookings"
+            href="index.php?route=bookings&page=mybookings"
             class="<?= $page === 'mybookings'
                 ? 'active'
                 : '' ?>"
@@ -632,7 +632,7 @@ function reportStatusText(
         <!-- TV2 -->
 
         <a
-            href="index.php?route=room_booking&page=report"
+            href="index.php?route=bookings&page=report"
             class="<?= $page === 'report'
                 ? 'active'
                 : '' ?>"
@@ -644,7 +644,7 @@ function reportStatusText(
         <!-- TV2 -->
 
         <a
-            href="index.php?route=room_booking&page=myreports"
+            href="index.php?route=bookings&page=myreports"
             class="<?= $page === 'myreports'
                 ? 'active'
                 : '' ?>"
@@ -759,7 +759,7 @@ function reportStatusText(
 
                     <a
                         class="link"
-                        href="index.php?route=room_booking&page=rooms"
+                        href="index.php?route=bookings&page=rooms"
                     >
                         Xem phòng →
                     </a>
@@ -782,7 +782,7 @@ function reportStatusText(
 
                     <a
                         class="link"
-                        href="index.php?route=room_booking&page=booking"
+                        href="index.php?route=bookings&page=booking"
                     >
                         Đặt phòng →
                     </a>
@@ -805,7 +805,7 @@ function reportStatusText(
 
                     <a
                         class="link"
-                        href="index.php?route=room_booking&page=mybookings"
+                        href="index.php?route=bookings&page=mybookings"
                     >
                         Xem booking →
                     </a>
@@ -828,7 +828,7 @@ function reportStatusText(
 
                     <a
                         class="link"
-                        href="index.php?route=room_booking&page=report"
+                        href="index.php?route=bookings&page=report"
                     >
                         Báo hỏng →
                     </a>
@@ -918,7 +918,7 @@ function reportStatusText(
 
                                 <a
                                     class="link"
-                                    href="index.php?route=room_booking&page=booking"
+                                    href="index.php?route=bookings&page=booking"
                                 >
                                     Đặt phòng →
                                 </a>
@@ -955,7 +955,7 @@ function reportStatusText(
 
                 <form
                     method="POST"
-                    action="index.php?route=room_booking&page=booking"
+                    action="index.php?route=bookings&page=booking"
                 >
 
 
@@ -1355,7 +1355,7 @@ function reportStatusText(
 
                                         <form
                                             method="POST"
-                                            action="index.php?route=room_booking&page=mybookings"
+                                            action="index.php?route=bookings&page=mybookings"
                                             onsubmit="
                                                 return confirm(
                                                     'Bạn có chắc muốn hủy yêu cầu này?'
@@ -1452,7 +1452,7 @@ function reportStatusText(
 
                 <form
                     method="POST"
-                    action="index.php?route=room_booking&page=report"
+                    action="index.php?route=bookings&page=report"
                 >
 
 

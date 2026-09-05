@@ -125,7 +125,7 @@ class RoomBookingController
          */
 
         require_once __DIR__
-            . '/../View/student/room_booking/index.php';
+            . '/../View/student/roombooking.php';
     }
 
 
