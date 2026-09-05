@@ -11,7 +11,7 @@ use App\Controller\MaintenanceController;
 use App\Repository\RoomBookingRepository;
 use App\Controller\RoomBookingController;
 
-$route = $_GET['page'] ?? $_GET['route'] ?? 'login';
+$route = $_GET['route'] ?? $_GET['page'] ?? 'login';
 
 $pdo = Database::connection();
 
@@ -37,8 +37,11 @@ switch ($route) {
         $userController->index();
         break;
 
+    case 'bookings':
     case 'rooms':
-        require_once __DIR__ . '/../src/View/student/TV2-quanlyphongthuchanh.php';
+        $bookingRepo = new RoomBookingRepository($pdo);
+        $bookingController = new RoomBookingController($bookingRepo);
+        $bookingController->index();
         break;
 
     case 'bookings':

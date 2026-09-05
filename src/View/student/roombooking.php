@@ -1,5 +1,14 @@
 <?php
 
+$user = $user ?? null;
+$success = $success ?? null;
+$error = $error ?? null;
+$page = $page ?? $_GET['page'] ?? 'home';
+$rooms = $rooms ?? [];
+$myBookings = $myBookings ?? [];
+$devices = $devices ?? [];
+$myReports = $myReports ?? [];
+
 function e($value): string
 {
     return htmlspecialchars(
