@@ -1,9 +1,8 @@
 <?php
 session_start();
-// Xóa sạch session cũ để tránh bị kẹt phân quyền cũ
 session_unset();
 session_destroy();
-session_start(); // Tạo session mới hoàn toàn
+session_start(); 
 
 require_once '../config/database.php';
 $error = "";
