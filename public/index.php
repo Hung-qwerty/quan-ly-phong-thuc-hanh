@@ -7,7 +7,7 @@ use App\Repository\UserRepository;
 use App\Controller\UserController;
 use App\Repository\MaintenanceRepository;
 use App\Controller\MaintenanceController;
-use App\Repository\BookingRepository;
+use App\Repository\RoomBookingRepository;
 use App\Controller\BookingController;
 
 $route = $_GET['route'] ?? 'login';
@@ -44,7 +44,7 @@ switch ($route) {
 
     // Phân hệ của TV3 (Booking)
     case 'bookings':
-        $bookingRepo = new BookingRepository($pdo);
+        $bookingRepo = new RoomBookingRepository($pdo);
         $bookingController = new BookingController($bookingRepo);
         $bookingController->index();
         break;
