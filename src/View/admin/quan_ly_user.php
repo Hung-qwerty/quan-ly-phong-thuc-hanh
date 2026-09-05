@@ -1,72 +1,3 @@
-<?php
-require_once '../../config/database.php';
-
-$errors = [];
-$success_msg = "";
-$u = "";
-$n = "";
-$r = "staff";
-
-$tab = $_GET['tab'] ?? 'internal';
-
-if (isset($_GET['action']) && $_GET['action'] == 'approve' && isset($_GET['id'])) {
-    $approve_id = intval($_GET['id']);
-    $stmt_app = $conn->prepare("UPDATE users SET status = 'active' WHERE id = ?");
-    $stmt_app->execute([$approve_id]);
-    header("Location: quan_ly_user.php?tab=students&msg=approved");
-    exit;
-}
-
-if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
-    $delete_id = intval($_GET['id']);
-    $stmt_del = $conn->prepare("DELETE FROM users WHERE id = ?");
-    $stmt_del->execute([$delete_id]);
-    header("Location: quan_ly_user.php?tab=" . $tab . "&msg=deleted");
-    exit;
-}
-
-if (isset($_GET['msg'])) {
-    if ($_GET['msg'] == 'approved') $success_msg = "Phê duyệt tài khoản sinh viên thành công!";
-    if ($_GET['msg'] == 'deleted') $success_msg = "Xóa tài khoản thành công!";
-}
-
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_internal_user'])) {
-    $u = trim($_POST['username'] ?? '');
-    $n = trim($_POST['fullname'] ?? '');
-    $r = $_POST['role'] ?? 'staff';
-    $password_raw = trim($_POST['password'] ?? '');
-
-    if (empty($u)) $errors['username'] = "Tên đăng nhập không được để trống!";
-    if (empty($n)) $errors['fullname'] = "Họ tên không được để trống!";
-    if (empty($password_raw)) $errors['password'] = "Mật khẩu không được để trống!";
-
-    if (empty($errors)) {
-        $stmt_check = $conn->prepare("SELECT id FROM users WHERE username = ?");
-        $stmt_check->execute([$u]);
-        if ($stmt_check->rowCount() > 0) {
-            $errors['username'] = "Tên đăng nhập này đã tồn tại!";
-        } else {
-            $hashed_pass = password_hash($password_raw, PASSWORD_DEFAULT);
-            $stmt_ins = $conn->prepare("INSERT INTO users (username, password, full_name, role, status) VALUES (?, ?, ?, ?, 'active')");
-            $stmt_ins->execute([$u, $hashed_pass, $n, $r]);
-            $success_msg = "Thêm tài khoản nội bộ thành công!";
-            $u = $n = "";
-        }
-    }
-}
-
-$stmt_students = $conn->query("SELECT * FROM users WHERE role = 'student' ORDER BY (status = 'pending') DESC, id DESC");
-$students = $stmt_students->fetchAll(PDO::FETCH_ASSOC);
-
-$stmt_internals = $conn->query("SELECT * FROM users WHERE role IN ('admin', 'staff') ORDER BY id DESC");
-$internals = $stmt_internals->fetchAll(PDO::FETCH_ASSOC);
-
-function getStatusBadge($status) {
-    if ($status == 'pending') return '<span class="badge bg-warning text-dark">Chờ duyệt</span>';
-    if ($status == 'active') return '<span class="badge bg-success">Đã kích hoạt</span>';
-    return '<span class="badge bg-danger">Từ chối</span>';
-}
-?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -143,17 +74,17 @@ function getStatusBadge($status) {
         <div class="brand">LAB MANAGEMENT</div>
         <ul class="nav flex-column mt-3">
             <li class="nav-item">
-                <a class="nav-link <?php echo ($tab == 'internal') ? 'active' : ''; ?>" href="?tab=internal">
+                <a class="nav-link <?php echo (($tab ?? 'internal') == 'internal') ? 'active' : ''; ?>" href="index.php?route=users&tab=internal">
                     Quản lý tài khoản Nội bộ
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link <?php echo ($tab == 'students') ? 'active' : ''; ?>" href="?tab=students">
+                <a class="nav-link <?php echo (($tab ?? '') == 'students') ? 'active' : ''; ?>" href="index.php?route=users&tab=students">
                     Duyệt tài khoản Sinh viên
                 </a>
             </li>
             <li class="nav-item mt-4">
-                <a class="nav-link text-danger" href="../login.php">Đăng xuất</a>
+                <a class="nav-link text-danger" href="index.php?route=logout">Đăng xuất</a>
             </li>
         </ul>
     </div>
@@ -172,22 +103,22 @@ function getStatusBadge($status) {
             </div>
         <?php endif; ?>
 
-        <?php if (isset($errors['username'])): ?>
+        <?php if (!empty($errors['username'])): ?>
             <div class="alert alert-danger"><?php echo $errors['username']; ?></div>
         <?php endif; ?>
 
-        <?php if ($tab == 'internal'): ?>
+        <?php if (($tab ?? 'internal') == 'internal'): ?>
             <div class="card card-custom p-4 mb-4">
                 <h4 class="text-primary mb-3">Thêm mới tài khoản Nội bộ</h4>
-                <form method="POST" class="row g-3">
+                <form method="POST" action="index.php?route=users&tab=internal" class="row g-3">
                     <input type="hidden" name="add_internal_user" value="1">
                     <div class="col-md-3">
                         <label class="form-label small text-muted">Tên đăng nhập</label>
-                        <input type="text" name="username" class="form-control" placeholder="username..." value="<?php echo htmlspecialchars($u); ?>" required>
+                        <input type="text" name="username" class="form-control" placeholder="username..." value="<?php echo htmlspecialchars($u ?? ''); ?>" required>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label small text-muted">Họ và tên</label>
-                        <input type="text" name="fullname" class="form-control" placeholder="Họ tên đầy đủ..." value="<?php echo htmlspecialchars($n); ?>" required>
+                        <input type="text" name="fullname" class="form-control" placeholder="Họ tên đầy đủ..." value="<?php echo htmlspecialchars($n ?? ''); ?>" required>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label small text-muted">Mật khẩu</label>
@@ -196,8 +127,8 @@ function getStatusBadge($status) {
                     <div class="col-md-2">
                         <label class="form-label small text-muted">Vai trò</label>
                         <select name="role" class="form-select">
-                            <option value="staff" <?php echo ($r == 'staff') ? 'selected' : ''; ?>>Cán bộ Lab</option>
-                            <option value="admin" <?php echo ($r == 'admin') ? 'selected' : ''; ?>>Admin</option>
+                            <option value="staff" <?php echo (($r ?? '') == 'staff') ? 'selected' : ''; ?>>Cán bộ Lab</option>
+                            <option value="admin" <?php echo (($r ?? '') == 'admin') ? 'selected' : ''; ?>>Admin</option>
                         </select>
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
@@ -220,28 +151,30 @@ function getStatusBadge($status) {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($internals as $idx => $internal): ?>
-                            <tr>
-                                <td><?php echo $idx + 1; ?></td>
-                                <td class="fw-bold"><?php echo htmlspecialchars($internal['username']); ?></td>
-                                <td><?php echo htmlspecialchars($internal['full_name']); ?></td>
-                                <td><span class="badge bg-<?php echo $internal['role'] == 'admin' ? 'danger' : 'warning text-dark'; ?>"><?php echo $internal['role']; ?></span></td>
-                                <td class="text-center">
-                                    <?php if ($internal['role'] !== 'admin'): ?>
-                                        <a href="?tab=internal&action=delete&id=<?php echo $internal['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa tài khoản này?');">Xóa</a>
-                                    <?php else: ?>
-                                        <span class="text-muted small">Quản trị viên chính</span>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
+                            <?php if (!empty($internals)): ?>
+                                <?php foreach ($internals as $idx => $internal): ?>
+                                <tr>
+                                    <td><?php echo $idx + 1; ?></td>
+                                    <td class="fw-bold"><?php echo htmlspecialchars($internal['username']); ?></td>
+                                    <td><?php echo htmlspecialchars($internal['full_name']); ?></td>
+                                    <td><span class="badge bg-<?php echo $internal['role'] == 'admin' ? 'danger' : 'warning text-dark'; ?>"><?php echo $internal['role']; ?></span></td>
+                                    <td class="text-center">
+                                        <?php if ($internal['role'] !== 'admin'): ?>
+                                            <a href="index.php?route=users&tab=internal&action=delete&id=<?php echo $internal['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Xóa tài khoản này?');">Xóa</a>
+                                        <?php else: ?>
+                                            <span class="text-muted small">Quản trị viên chính</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
             </div>
         <?php endif; ?>
 
-        <?php if ($tab == 'students'): ?>
+        <?php if (($tab ?? '') == 'students'): ?>
             <div class="card card-custom p-4">
                 <h4 class="text-primary mb-3">Danh sách & Phê duyệt tài khoản Sinh viên</h4>
                 <div class="table-responsive">
@@ -256,18 +189,25 @@ function getStatusBadge($status) {
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if (count($students) > 0): ?>
+                            <?php if (!empty($students) && count($students) > 0): ?>
                                 <?php foreach ($students as $index => $student): ?>
                                 <tr>
                                     <td><?php echo $index + 1; ?></td>
                                     <td class="fw-bold text-primary"><?php echo htmlspecialchars($student['username']); ?></td>
                                     <td><?php echo htmlspecialchars($student['full_name']); ?></td>
-                                    <td><?php echo getStatusBadge($student['status']); ?></td>
+                                    <td>
+                                        <?php 
+                                            $status = $student['status'] ?? '';
+                                            if ($status == 'pending') echo '<span class="badge bg-warning text-dark">Chờ duyệt</span>';
+                                            elseif ($status == 'active') echo '<span class="badge bg-success">Đã kích hoạt</span>';
+                                            else echo '<span class="badge bg-danger">Từ chối</span>';
+                                        ?>
+                                    </td>
                                     <td class="text-center">
-                                        <?php if ($student['status'] == 'pending'): ?>
-                                            <a href="?tab=students&action=approve&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-success me-1">Duyệt</a>
+                                        <?php if (($student['status'] ?? '') == 'pending'): ?>
+                                            <a href="index.php?route=users&tab=students&action=approve&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-success me-1">Duyệt</a>
                                         <?php endif; ?>
-                                        <a href="?tab=students&action=delete&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc muốn xóa sinh viên này?');">Xóa</a>
+                                        <a href="index.php?route=users&tab=students&action=delete&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc muốn xóa sinh viên này?');">Xóa</a>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>

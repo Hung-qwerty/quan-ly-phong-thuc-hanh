@@ -1,5 +1,4 @@
 <?php
-require_once '../config/database.php';
 $error = "";
 $success = "";
 
@@ -11,15 +10,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($username) || empty($password) || empty($fullname)) {
         $error = "Vui lòng điền đầy đủ tất cả các trường!";
     } else {
-        // Kiểm tra username đã tồn tại chưa
-        $stmt = $conn->prepare("SELECT id FROM users WHERE username = ?");
+
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
         $stmt->execute([$username]);
+        
         if ($stmt->rowCount() > 0) {
             $error = "Tên đăng nhập này đã tồn tại!";
         } else {
-            // Lưu với role = student và status = pending (chờ admin duyệt)
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            $stmt_ins = $conn->prepare("INSERT INTO users (username, password, full_name, role, status) VALUES (?, ?, ?, 'student', 'pending')");
+            $stmt_ins = $pdo->prepare("INSERT INTO users (username, password, full_name, role, status) VALUES (?, ?, ?, 'student', 'pending')");
             if ($stmt_ins->execute([$username, $hashed_password, $fullname])) {
                 $success = "Đăng ký thành công! Tài khoản của bạn đang chờ Admin phê duyệt.";
             } else {
@@ -45,7 +44,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <?php endif; ?>
         <?php if (!empty($success)): ?>
             <div class="alert alert-success py-2"><?php echo $success; ?></div>
-            <a href="login.php" class="btn btn-primary w-100 mt-2">Đăng nhập ngay</a>
+            <a href="index.php?route=login" class="btn btn-primary w-100 mt-2">Đăng nhập ngay</a>
         <?php else: ?>
             <form method="POST">
                 <div class="mb-3">

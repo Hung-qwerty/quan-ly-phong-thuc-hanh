@@ -1,11 +1,4 @@
 <?php
-session_start();
-// Xóa sạch session cũ để tránh bị kẹt phân quyền cũ
-session_unset();
-session_destroy();
-session_start(); // Tạo session mới hoàn toàn
-
-require_once '../config/database.php';
 $error = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -15,9 +8,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($username) || empty($password)) {
         $error = "Vui lòng nhập tên đăng nhập và mật khẩu!";
     } else {
-        $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
+
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
         $stmt->execute([$username]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
             if (isset($user['status']) && $user['status'] == 'pending') {
@@ -25,24 +19,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             } elseif (isset($user['status']) && $user['status'] == 'rejected') {
                 $error = "Tài khoản của bạn đã bị từ chối truy cập!";
             } else {
-                // Lưu thông tin vào Session
+     
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['full_name'] = $user['full_name'];
                 $_SESSION['role'] = $user['role'];
 
-                // Dùng đường dẫn chuẩn xác tuyệt đối từ thư mục gốc của project
-                $base_url = "/quan-ly-phong-thuc-hanh";
-
                 if ($user['role'] == 'admin') {
-                    header("Location: " . $base_url . "/pages/admin/quan_ly_user.php");
-                    exit;
+                    header("Location: index.php?route=users");
+                    exit();
                 } elseif ($user['role'] == 'staff') {
-                    header("Location: " . $base_url . "/pages/staff/formbaotritv5.php");
-                    exit;
+                    header("Location: index.php?route=maintenance");
+                    exit();
                 } else {
-                    header("Location: " . $base_url . "/pages/student/TV3-quanlybooking.php");
-                    exit;
+                    header("Location: index.php?route=bookings");
+                    exit();
                 }
             }
         } else {
@@ -80,7 +71,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <button type="submit" class="btn btn-primary w-100">Đăng Nhập</button>
         </form>
         <div class="text-center mt-3">
-            <small>Chưa có tài khoản sinh viên? <a href="register.php">Đăng ký ngay</a></small>
+            <small>Chưa có tài khoản sinh viên? <a href="index.php?route=register">Đăng ký ngay</a></small>
         </div>
     </div>
 </body>
