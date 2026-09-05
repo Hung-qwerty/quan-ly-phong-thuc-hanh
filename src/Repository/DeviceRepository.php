@@ -1,17 +1,21 @@
 <?php
 
+namespace App\Repository;
+
+use PDO;
+
 class DeviceRepository
 {
-    private $pdo;
+    private PDO $pdo;
 
-    public function __construct($pdo)
+    public function __construct(PDO $pdo)
     {
         $this->pdo = $pdo;
     }
 
-    public function getAllDevices()
+    public function getAllDevices(): array
     {
-        $sql = "SELECT 
+        $sql = "SELECT
                     d.id,
                     d.device_code,
                     d.device_name,
@@ -29,7 +33,7 @@ class DeviceRepository
         return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getDeviceTypes()
+    public function getDeviceTypes(): array
     {
         $sql = "SELECT id, name
                 FROM device_types
@@ -38,7 +42,7 @@ class DeviceRepository
         return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getRooms()
+    public function getRooms(): array
     {
         $sql = "SELECT id, room_code, room_name, capacity, status
                 FROM rooms
@@ -47,7 +51,7 @@ class DeviceRepository
         return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getDeviceById($id)
+    public function getDeviceById(int $id): ?array
     {
         $sql = "SELECT *
                 FROM devices
@@ -58,11 +62,18 @@ class DeviceRepository
             ':id' => $id
         ]);
 
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $device = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $device ?: null;
     }
 
-    public function addDevice($deviceCode, $deviceName, $typeId, $roomId, $status)
-    {
+    public function addDevice(
+        string $deviceCode,
+        string $deviceName,
+        int $typeId,
+        int $roomId,
+        string $status
+    ): bool {
         $sql = "INSERT INTO devices
                 (device_code, device_name, type_id, room_id, status)
                 VALUES
@@ -79,8 +90,14 @@ class DeviceRepository
         ]);
     }
 
-    public function updateDevice($id, $deviceCode, $deviceName, $typeId, $roomId, $status)
-    {
+    public function updateDevice(
+        int $id,
+        string $deviceCode,
+        string $deviceName,
+        int $typeId,
+        int $roomId,
+        string $status
+    ): bool {
         $sql = "UPDATE devices
                 SET device_code = :device_code,
                     device_name = :device_name,
@@ -101,7 +118,7 @@ class DeviceRepository
         ]);
     }
 
-    public function deleteDevice($id)
+    public function deleteDevice(int $id): bool
     {
         $sql = "DELETE FROM devices
                 WHERE id = :id";
@@ -113,7 +130,7 @@ class DeviceRepository
         ]);
     }
 
-    public function getBookings()
+    public function getBookings(): array
     {
         $sql = "SELECT
                     b.id,
@@ -135,7 +152,7 @@ class DeviceRepository
         return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getBookingById($id)
+    public function getBookingById(int $id): ?array
     {
         $sql = "SELECT *
                 FROM bookings
@@ -146,10 +163,12 @@ class DeviceRepository
             ':id' => $id
         ]);
 
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        $booking = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $booking ?: null;
     }
 
-    public function updateBookingStatus($id, $status)
+    public function updateBookingStatus(int $id, string $status): bool
     {
         $sql = "UPDATE bookings
                 SET status = :status
@@ -163,9 +182,13 @@ class DeviceRepository
         ]);
     }
 
-    public function checkBookingConflict($roomId, $startTime, $endTime, $excludeId = null)
-    {
-        $sql = "SELECT COUNT(*) 
+    public function checkBookingConflict(
+        int $roomId,
+        string $startTime,
+        string $endTime,
+        ?int $excludeId = null
+    ): bool {
+        $sql = "SELECT COUNT(*)
                 FROM bookings
                 WHERE room_id = :room_id
                 AND status = 'approved'

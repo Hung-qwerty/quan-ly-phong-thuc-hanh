@@ -1,83 +1,581 @@
 <?php
-$devices = $devices ?? [];
-$deviceTypes = $deviceTypes ?? [];
-$rooms = $rooms ?? [];
-$bookings = $bookings ?? [];
-$message = $message ?? '';
 
-function deviceStatusText($status)
+$deviceTypes = [
+    ["id" => 1, "name" => "Máy tính"],
+    ["id" => 2, "name" => "Bàn phím"],
+    ["id" => 3, "name" => "TV"],
+    ["id" => 4, "name" => "Máy chiếu"]
+];
+
+$rooms = [
+    [
+        "id" => 1,
+        "room_code" => "P101",
+        "room_name" => "Phòng Lab Lập Trình Web",
+        "capacity" => 40,
+        "status" => "available"
+    ],
+    [
+        "id" => 2,
+        "room_code" => "P102",
+        "room_name" => "Phòng Lab Cơ Sở Dữ Liệu",
+        "capacity" => 35,
+        "status" => "available"
+    ],
+    [
+        "id" => 3,
+        "room_code" => "P103",
+        "room_name" => "Phòng Lab Nhúng & IoT",
+        "capacity" => 30,
+        "status" => "maintenance"
+    ]
+];
+
+$devices = [
+    [
+        "id" => 1,
+        "device_code" => "TB001",
+        "device_name" => "Máy tính DELL",
+        "type_id" => 1,
+        "room_id" => 1,
+        "status" => "active"
+    ],
+    [
+        "id" => 2,
+        "device_code" => "TB002",
+        "device_name" => "Bàn phím Fulhen",
+        "type_id" => 2,
+        "room_id" => 2,
+        "status" => "maintenance"
+    ],
+    [
+        "id" => 3,
+        "device_code" => "TB003",
+        "device_name" => "TV LG",
+        "type_id" => 3,
+        "room_id" => 1,
+        "status" => "broken"
+    ]
+];
+
+$users = [
+    [
+        "id" => 1,
+        "username" => "admin",
+        "full_name" => "Quản Trị Viên",
+        "role" => "admin",
+        "status" => "active"
+    ],
+    [
+        "id" => 2,
+        "username" => "staff01",
+        "full_name" => "Cán Bộ Lab Nguyễn Văn A",
+        "role" => "staff",
+        "status" => "active"
+    ],
+    [
+        "id" => 3,
+        "username" => "student01",
+        "full_name" => "Sinh Viên Trần Văn B",
+        "role" => "student",
+        "status" => "active"
+    ]
+];
+
+$borrowings = [
+    [
+        "id" => 1,
+        "user_id" => 3,
+        "device_id" => 1,
+        "start_time" => "08:00 27/08/2026",
+        "end_time" => "11:00 27/08/2026",
+        "status" => "pending"
+    ],
+    [
+        "id" => 2,
+        "user_id" => 3,
+        "device_id" => 2,
+        "start_time" => "13:00 28/08/2026",
+        "end_time" => "16:00 28/08/2026",
+        "status" => "approved"
+    ]
+];
+
+$bookings = [
+    [
+        "id" => 1,
+        "user_id" => 3,
+        "room_id" => 1,
+        "start_time" => "08:00 25/08/2026",
+        "end_time" => "10:00 25/08/2026",
+        "purpose" => "Thực hành lập trình Web",
+        "status" => "pending",
+        "created_at" => "2026-08-20 08:00:00"
+    ],
+    [
+        "id" => 2,
+        "user_id" => 3,
+        "room_id" => 2,
+        "start_time" => "13:00 25/08/2026",
+        "end_time" => "15:00 25/08/2026",
+        "purpose" => "Thực hành cơ sở dữ liệu",
+        "status" => "pending",
+        "created_at" => "2026-08-20 09:00:00"
+    ],
+    [
+        "id" => 3,
+        "user_id" => 3,
+        "room_id" => 3,
+        "start_time" => "08:00 26/08/2026",
+        "end_time" => "10:00 26/08/2026",
+        "purpose" => "Thực hành IoT",
+        "status" => "approved",
+        "created_at" => "2026-08-20 10:00:00"
+    ]
+];
+
+$maintenance = [
+    [
+        "maintenance_id" => 1,
+        "device_id" => 2,
+        "description" => "Bàn phím bị liệt một số phím",
+        "maintenance_status" => "Đang bảo trì",
+        "created_at" => "2026-08-20 08:30:00",
+        "maintenance_date" => "2026-08-20",
+        "content" => "Kiểm tra và vệ sinh bàn phím",
+        "result" => "Đang thực hiện"
+    ]
+];
+
+function timTenLoai($id, $list)
 {
-    switch ($status) {
-        case 'active':
-            return 'Tốt';
-        case 'maintenance':
-            return 'Đang bảo trì';
-        case 'broken':
-            return 'Hỏng';
-        default:
-            return $status;
+    foreach ($list as $item) {
+        if ((int)$item["id"] === (int)$id) {
+            return $item["name"];
+        }
+    }
+
+    return "";
+}
+
+function timTenPhong($id, $list)
+{
+    foreach ($list as $item) {
+        if ((int)$item["id"] === (int)$id) {
+            return $item["room_code"] . " - " . $item["room_name"];
+        }
+    }
+
+    return "";
+}
+
+function timMaPhong($id, $list)
+{
+    foreach ($list as $item) {
+        if ((int)$item["id"] === (int)$id) {
+            return $item["room_code"];
+        }
+    }
+
+    return "";
+}
+
+function timTenThietBi($id, $list)
+{
+    foreach ($list as $item) {
+        if ((int)$item["id"] === (int)$id) {
+            return $item["device_name"];
+        }
+    }
+
+    return "";
+}
+
+function timTenUser($id, $list)
+{
+    foreach ($list as $item) {
+        if ((int)$item["id"] === (int)$id) {
+            return $item["full_name"];
+        }
+    }
+
+    return "";
+}
+
+function timThietBi($id, $list)
+{
+    foreach ($list as $item) {
+        if ((int)$item["id"] === (int)$id) {
+            return $item;
+        }
+    }
+
+    return null;
+}
+
+function kiemTraThietBi($code, $name, $typeId, $roomId, $status)
+{
+    $errors = [];
+
+    if ($code === "") {
+        $errors[] = "Vui lòng nhập mã thiết bị!";
+    }
+
+    if ($name === "") {
+        $errors[] = "Vui lòng nhập tên thiết bị!";
+    }
+
+    if ($typeId === "") {
+        $errors[] = "Vui lòng chọn loại thiết bị!";
+    }
+
+    if ($roomId === "") {
+        $errors[] = "Vui lòng chọn phòng!";
+    }
+
+    if (!in_array($status, ["active", "maintenance", "broken"], true)) {
+        $errors[] = "Trạng thái thiết bị không hợp lệ!";
+    }
+
+    return $errors;
+}
+
+$message = "";
+$messageType = "";
+
+$page = $_GET["page"] ?? "devices";
+
+$statusText = [
+    "active" => "Hoạt động",
+    "maintenance" => "Đang bảo trì",
+    "broken" => "Hỏng"
+];
+
+$roomStatusText = [
+    "available" => "Đang trống",
+    "booked" => "Đã đặt",
+    "maintenance" => "Bảo trì"
+];
+
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+
+    $action = $_POST["action"] ?? "";
+
+    if ($action === "add") {
+
+        $deviceCode = trim($_POST["device_code"] ?? "");
+        $deviceName = trim($_POST["device_name"] ?? "");
+        $typeId = $_POST["type_id"] ?? "";
+        $roomId = $_POST["room_id"] ?? "";
+        $status = $_POST["status"] ?? "active";
+
+        $errors = kiemTraThietBi(
+            $deviceCode,
+            $deviceName,
+            $typeId,
+            $roomId,
+            $status
+        );
+
+        if (!$errors) {
+
+            $newId = empty($devices)
+                ? 1
+                : max(array_column($devices, "id")) + 1;
+
+            $devices[] = [
+                "id" => $newId,
+                "device_code" => $deviceCode,
+                "device_name" => $deviceName,
+                "type_id" => (int)$typeId,
+                "room_id" => (int)$roomId,
+                "status" => $status
+            ];
+
+            $message = "Thêm thiết bị thành công!";
+            $messageType = "success";
+
+        } else {
+
+            $message = implode("<br>", $errors);
+            $messageType = "error";
+        }
+    }
+
+    if ($action === "edit") {
+
+        $id = (int)($_POST["id"] ?? 0);
+        $deviceCode = trim($_POST["device_code"] ?? "");
+        $deviceName = trim($_POST["device_name"] ?? "");
+        $typeId = $_POST["type_id"] ?? "";
+        $roomId = $_POST["room_id"] ?? "";
+        $status = $_POST["status"] ?? "active";
+
+        $errors = kiemTraThietBi(
+            $deviceCode,
+            $deviceName,
+            $typeId,
+            $roomId,
+            $status
+        );
+
+        if (!$errors) {
+
+            foreach ($devices as &$device) {
+
+                if ((int)$device["id"] === $id) {
+
+                    $device["device_code"] = $deviceCode;
+                    $device["device_name"] = $deviceName;
+                    $device["type_id"] = (int)$typeId;
+                    $device["room_id"] = (int)$roomId;
+                    $device["status"] = $status;
+
+                    break;
+                }
+            }
+
+            unset($device);
+
+            $message = "Cập nhật thiết bị thành công!";
+            $messageType = "success";
+
+        } else {
+
+            $message = implode("<br>", $errors);
+            $messageType = "error";
+        }
+    }
+
+    if ($action === "delete") {
+
+        $id = (int)($_POST["id"] ?? 0);
+
+        foreach ($devices as $index => $device) {
+
+            if ((int)$device["id"] === $id) {
+
+                unset($devices[$index]);
+                break;
+            }
+        }
+
+        $devices = array_values($devices);
+
+        $message = "Xóa thiết bị thành công!";
+        $messageType = "success";
+    }
+
+    if ($action === "booking") {
+
+        $id = (int)($_POST["id"] ?? 0);
+        $status = $_POST["status"] ?? "";
+
+        if (in_array($status, ["approved", "rejected"], true)) {
+
+            foreach ($bookings as &$booking) {
+
+                if ((int)$booking["id"] === $id) {
+
+                    $booking["status"] = $status;
+                    break;
+                }
+            }
+
+            unset($booking);
+
+            $message = $status === "approved"
+                ? "Đã đồng ý yêu cầu đặt phòng!"
+                : "Đã từ chối yêu cầu đặt phòng!";
+
+            $messageType = "success";
+        }
+    }
+
+    if ($action === "borrow") {
+
+        $id = (int)($_POST["id"] ?? 0);
+        $status = $_POST["status"] ?? "";
+
+        if (in_array($status, ["approved", "rejected"], true)) {
+
+            foreach ($borrowings as &$borrowing) {
+
+                if ((int)$borrowing["id"] === $id) {
+
+                    if ($status === "approved") {
+
+                        $conflict = false;
+
+                        $start1 = strtotime($borrowing["start_time"]);
+                        $end1 = strtotime($borrowing["end_time"]);
+
+                        foreach ($borrowings as $other) {
+
+                            if (
+                                (int)$other["id"] !== $id &&
+                                (int)$other["device_id"] === (int)$borrowing["device_id"] &&
+                                $other["status"] === "approved"
+                            ) {
+
+                                $start2 = strtotime($other["start_time"]);
+                                $end2 = strtotime($other["end_time"]);
+
+                                if ($start1 < $end2 && $end1 > $start2) {
+                                    $conflict = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if ($conflict) {
+
+                            $message = "Không thể duyệt vì thiết bị đã có lịch mượn trùng thời gian!";
+                            $messageType = "error";
+
+                        } else {
+
+                            $borrowing["status"] = "approved";
+                            $message = "Đã duyệt yêu cầu mượn thiết bị!";
+                            $messageType = "success";
+                        }
+
+                    } else {
+
+                        $borrowing["status"] = "rejected";
+                        $message = "Đã từ chối yêu cầu mượn thiết bị!";
+                        $messageType = "success";
+                    }
+
+                    break;
+                }
+            }
+
+            unset($borrowing);
+        }
+    }
+
+    if ($action === "maintenance_start") {
+
+        $deviceId = (int)($_POST["device_id"] ?? 0);
+        $description = trim($_POST["description"] ?? "");
+
+        if ($deviceId <= 0 || $description === "") {
+
+            $message = "Vui lòng chọn thiết bị và nhập nội dung bảo trì!";
+            $messageType = "error";
+
+        } else {
+
+            $newId = empty($maintenance)
+                ? 1
+                : max(array_column($maintenance, "maintenance_id")) + 1;
+
+            $maintenance[] = [
+                "maintenance_id" => $newId,
+                "device_id" => $deviceId,
+                "description" => $description,
+                "maintenance_status" => "Đang bảo trì",
+                "created_at" => date("Y-m-d H:i:s"),
+                "maintenance_date" => date("Y-m-d"),
+                "content" => $description,
+                "result" => "Đang thực hiện"
+            ];
+
+            foreach ($devices as &$device) {
+
+                if ((int)$device["id"] === $deviceId) {
+                    $device["status"] = "maintenance";
+                    break;
+                }
+            }
+
+            unset($device);
+
+            $message = "Đã tạo phiếu bảo trì thành công!";
+            $messageType = "success";
+        }
+    }
+
+    if ($action === "maintenance_update") {
+
+        $maintenanceId = (int)($_POST["maintenance_id"] ?? 0);
+        $deviceId = (int)($_POST["device_id"] ?? 0);
+        $status = $_POST["maintenance_status"] ?? "";
+        $result = trim($_POST["result"] ?? "");
+
+        if (
+            $maintenanceId <= 0 ||
+            $deviceId <= 0 ||
+            $result === "" ||
+            !in_array($status, ["Đang bảo trì", "Hoàn thành"], true)
+        ) {
+
+            $message = "Thông tin cập nhật bảo trì không hợp lệ!";
+            $messageType = "error";
+
+        } else {
+
+            foreach ($maintenance as &$item) {
+
+                if ((int)$item["maintenance_id"] === $maintenanceId) {
+
+                    $item["maintenance_status"] = $status;
+                    $item["maintenance_date"] = date("Y-m-d");
+                    $item["content"] = $result;
+                    $item["result"] = $result;
+
+                    break;
+                }
+            }
+
+            unset($item);
+
+            foreach ($devices as &$device) {
+
+                if ((int)$device["id"] === $deviceId) {
+
+                    $device["status"] = $status === "Hoàn thành"
+                        ? "active"
+                        : "maintenance";
+
+                    break;
+                }
+            }
+
+            unset($device);
+
+            $message = $status === "Hoàn thành"
+                ? "Bảo trì hoàn thành. Thiết bị đã chuyển sang Hoạt động."
+                : "Đã cập nhật phiếu bảo trì.";
+
+            $messageType = "success";
+        }
     }
 }
 
-function deviceStatusClass($status)
-{
-    switch ($status) {
-        case 'active':
-            return 'device-good';
-        case 'maintenance':
-            return 'device-maintenance';
-        case 'broken':
-            return 'device-broken';
-        default:
-            return '';
+$pendingBookings = 0;
+$processedBookings = 0;
+
+foreach ($bookings as $booking) {
+
+    if ($booking["status"] === "pending") {
+        $pendingBookings++;
+    } else {
+        $processedBookings++;
     }
 }
 
-function bookingStatusText($status)
-{
-    switch ($status) {
-        case 'pending':
-            return 'Chờ duyệt';
-        case 'approved':
-            return 'Đã duyệt';
-        case 'rejected':
-            return 'Từ chối';
-        case 'cancelled':
-            return 'Đã hủy';
-        default:
-            return $status;
+$pendingBorrowings = 0;
+$processedBorrowings = 0;
+
+foreach ($borrowings as $borrowing) {
+
+    if ($borrowing["status"] === "pending") {
+        $pendingBorrowings++;
+    } else {
+        $processedBorrowings++;
     }
-}
-
-function bookingStatusClass($status)
-{
-    switch ($status) {
-        case 'pending':
-            return 'status-pending';
-        case 'approved':
-            return 'status-approved';
-        case 'rejected':
-            return 'status-rejected';
-        case 'cancelled':
-            return 'status-cancelled';
-        default:
-            return '';
-    }
-}
-
-function formatDateTime($datetime)
-{
-    if (empty($datetime)) {
-        return '';
-    }
-
-    $time = strtotime($datetime);
-
-    if ($time === false) {
-        return $datetime;
-    }
-
-    return date('H:i d/m/Y', $time);
 }
 
 $totalDevices = count($devices);
@@ -86,1439 +584,2656 @@ $maintenanceDevices = 0;
 $brokenDevices = 0;
 
 foreach ($devices as $device) {
-    if (($device['status'] ?? '') === 'active') {
+
+    if ($device["status"] === "active") {
         $activeDevices++;
-    }
-
-    if (($device['status'] ?? '') === 'maintenance') {
+    } elseif ($device["status"] === "maintenance") {
         $maintenanceDevices++;
-    }
-
-    if (($device['status'] ?? '') === 'broken') {
+    } elseif ($device["status"] === "broken") {
         $brokenDevices++;
     }
 }
 
-$totalBookings = count($bookings);
-$pendingBookings = 0;
-$processedBookings = 0;
+$pendingMaintenance = 0;
+$completedMaintenance = 0;
 
-foreach ($bookings as $booking) {
-    if (($booking['status'] ?? '') === 'pending') {
-        $pendingBookings++;
-    } else {
-        $processedBookings++;
+foreach ($maintenance as $item) {
+
+    if ($item["maintenance_status"] === "Đang bảo trì") {
+        $pendingMaintenance++;
+    } elseif ($item["maintenance_status"] === "Hoàn thành") {
+        $completedMaintenance++;
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý phòng thực hành</title>
-
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            background: #f4f6f9;
-            color: #222;
-        }
-
-        .header {
-            height: 65px;
-            background: #003399;
-            color: white;
-            display: flex;
-            align-items: center;
-            padding: 0 25px;
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .layout {
-            display: flex;
-            min-height: calc(100vh - 65px);
-        }
-
-        .sidebar {
-            width: 245px;
-            background: white;
-            border-right: 1px solid #ddd;
-            padding: 20px 12px;
-            flex-shrink: 0;
-        }
-
-        .sidebar-title {
-            font-size: 14px;
-            color: #777;
-            padding: 10px 12px;
-            margin-bottom: 8px;
-        }
-
-        .menu-item {
-            display: block;
-            padding: 13px 15px;
-            margin-bottom: 5px;
-            border-radius: 6px;
-            color: #333;
-            text-decoration: none;
-            font-size: 15px;
-        }
-
-        .menu-item:hover {
-            background: #eef3ff;
-            color: #003399;
-        }
-
-        .menu-item.active {
-            background: #003399;
-            color: white;
-        }
-
-        .main {
-            flex: 1;
-            padding: 25px;
-            min-width: 0;
-        }
-
-        .page-title {
-            font-size: 25px;
-            font-weight: bold;
-            margin-bottom: 22px;
-            color: #222;
-        }
-
-        .message {
-            padding: 13px 16px;
-            background: #eaf7ee;
-            border: 1px solid #b9e4c5;
-            color: #216b36;
-            border-radius: 6px;
-            margin-bottom: 20px;
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .stat-card {
-            background: white;
-            border-radius: 8px;
-            padding: 18px;
-            border: 1px solid #e3e3e3;
-        }
-
-        .stat-title {
-            color: #777;
-            font-size: 14px;
-            margin-bottom: 8px;
-        }
-
-        .stat-number {
-            font-size: 27px;
-            font-weight: bold;
-            color: #003399;
-        }
-
-        .content-card {
-            background: white;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-            margin-bottom: 25px;
-            overflow: hidden;
-        }
-
-        .card-header {
-            padding: 18px 20px;
-            border-bottom: 1px solid #e5e5e5;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .card-title {
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .card-body {
-            padding: 20px;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .form-group label {
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 7px;
-        }
-
-        .form-group input,
-        .form-group select {
-            height: 40px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            padding: 0 12px;
-            font-size: 14px;
-            outline: none;
-            background: white;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            border-color: #003399;
-        }
-
-        .form-actions {
-            margin-top: 18px;
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        .btn {
-            border: 0;
-            border-radius: 5px;
-            padding: 10px 17px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-        }
-
-        .btn-primary {
-            background: #003399;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #002b80;
-        }
-
-        .btn-edit {
-            background: #f0ad4e;
-            color: white;
-        }
-
-        .btn-delete {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn-approve {
-            background: #198754;
-            color: white;
-        }
-
-        .btn-reject {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn-cancel {
-            background: #777;
-            color: white;
-        }
-
-        .action-group {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th {
-            background: #f5f6f8;
-            font-size: 14px;
-            font-weight: bold;
-            text-align: left;
-            padding: 13px 12px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        td {
-            padding: 13px 12px;
-            border-bottom: 1px solid #eee;
-            font-size: 14px;
-            vertical-align: middle;
-        }
-
-        tr:last-child td {
-            border-bottom: 0;
-        }
-
-        .device-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            font-size: 13px;
-            font-weight: bold;
-        }
-
-        .device-status::before {
-            content: "";
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        .device-good::before {
-            background: #198754;
-        }
-
-        .device-maintenance::before {
-            background: #f0ad4e;
-        }
-
-        .device-broken::before {
-            background: #dc3545;
-        }
-
-        .status {
-            display: inline-block;
-            padding: 6px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .status-pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .status-approved {
-            background: #d1e7dd;
-            color: #0f5132;
-        }
-
-        .status-rejected {
-            background: #f8d7da;
-            color: #842029;
-        }
-
-        .status-cancelled {
-            background: #e2e3e5;
-            color: #41464b;
-        }
-
-        .tabs {
-            display: flex;
-            border-bottom: 1px solid #ddd;
-            background: white;
-        }
-
-        .tab {
-            padding: 15px 20px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            border-bottom: 3px solid transparent;
-            color: #666;
-        }
-
-        .tab.active {
-            color: #003399;
-            border-bottom-color: #003399;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .empty {
-            text-align: center;
-            padding: 35px;
-            color: #777;
-            font-size: 14px;
-        }
-
-        .calendar {
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .calendar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 18px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .calendar-title {
-            font-size: 17px;
-            font-weight: bold;
-        }
-
-        .calendar-buttons {
-            display: flex;
-            gap: 7px;
-        }
-
-        .calendar-btn {
-            width: 34px;
-            height: 34px;
-            border: 1px solid #ccc;
-            background: white;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .calendar-btn:hover {
-            background: #f1f3f5;
-        }
-
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-        }
-
-        .calendar-day-name {
-            background: #f5f6f8;
-            padding: 11px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 13px;
-            border-right: 1px solid #e5e5e5;
-            border-bottom: 1px solid #e5e5e5;
-        }
-
-        .calendar-cell {
-            min-height: 105px;
-            padding: 8px;
-            border-right: 1px solid #e5e5e5;
-            border-bottom: 1px solid #e5e5e5;
-        }
-
-        .calendar-cell.other-month {
-            background: #fafafa;
-            color: #aaa;
-        }
-
-        .calendar-date {
-            font-size: 13px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .calendar-event {
-            background: #eaf0ff;
-            color: #003399;
-            padding: 4px 5px;
-            margin-bottom: 3px;
-            border-radius: 3px;
-            font-size: 11px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .calendar-event.booking {
-            background: #e8f5e9;
-            color: #1b5e20;
-        }
-
-        .calendar-event.pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .calendar-more {
-            font-size: 10px;
-            color: #666;
-        }
-
-        .section-spacing {
-            margin-top: 25px;
-        }
-
-        @media (max-width: 1000px) {
-            .stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .sidebar {
-                width: 210px;
-            }
-        }
-
-        @media (max-width: 700px) {
-            .layout {
-                display: block;
-            }
-
-            .sidebar {
-                width: 100%;
-                border-right: 0;
-                border-bottom: 1px solid #ddd;
-            }
-
-            .main {
-                padding: 15px;
-            }
-
-            .stats {
-                grid-template-columns: 1fr;
-            }
-
-            .content-card {
-                overflow-x: auto;
-            }
-
-            table {
-                min-width: 850px;
-            }
-
-            .calendar {
-                overflow-x: auto;
-            }
-
-            .calendar-grid {
-                min-width: 700px;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quản lý phòng thực hành</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+    margin:0;
+    font-family:"Segoe UI",Arial,sans-serif;
+    background:#f4f7f9;
+    color:#333
+}
+
+.header{
+    height:70px;
+    background:#003399;
+    border-bottom:1px solid #002F62;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 30px
+}
+
+.header-title{
+    color:#fff;
+    font-size:15px;
+    font-weight:600
+}
+
+.staff{
+    display:flex;
+    align-items:center;
+    gap:10px
+}
+
+.avatar{
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    background:#fff;
+    color:#003B7A;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700
+}
+
+.staff-name{
+    font-size:14px;
+    font-weight:600;
+    color:#fff
+}
+
+.layout{
+    display:flex;
+    min-height:calc(100vh - 70px)
+}
+
+.sidebar{
+    width:245px;
+    flex-shrink:0;
+    background:#fff;
+    border-right:1px solid #dee2e6;
+    padding:25px 16px
+}
+
+.logo{
+    padding:0 12px 25px;
+    border-bottom:1px solid #dee2e6;
+    margin-bottom:22px
+}
+
+.logo h2{
+    margin:0;
+    color:#003399;
+    font-size:20px;
+    line-height:1.35
+}
+
+.logo p{
+    margin:7px 0 0;
+    color:#777;
+    font-size:13px
+}
+
+.menu-title{
+    padding:0 12px;
+    margin-bottom:8px;
+    color:#999;
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase
+}
+
+.menu a{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px;
+    margin-bottom:5px;
+    border-radius:7px;
+    color:#555;
+    text-decoration:none;
+    font-size:14px
+}
+
+.menu a:hover,
+.menu a.active{
+    background:#eaf0fa;
+    color:#003399
+}
+
+.menu a.active{
+    font-weight:600
+}
+
+.icon{
+    width:22px;
+    text-align:center;
+    font-size:16px
+}
+
+.main{
+    flex:1;
+    min-width:0;
+    width:calc(100% - 245px)
+}
+
+.content{
+    width:100%;
+    padding:30px
+}
+
+.page-title{
+    margin-bottom:25px
+}
+
+.page-title h1{
+    margin:0;
+    color:#003399;
+    font-size:25px
+}
+
+.page-title p{
+    margin:6px 0 0;
+    color:#777;
+    font-size:14px
+}
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:18px;
+    margin-bottom:25px
+}
+
+.stat{
+    background:#fff;
+    border:1px solid #dee2e6;
+    border-radius:8px;
+    padding:18px 20px
+}
+
+.stat-label{
+    color:#777;
+    font-size:13px;
+    margin-bottom:8px
+}
+
+.stat-number{
+    color:#003399;
+    font-size:25px;
+    font-weight:700
+}
+
+.card{
+    width:100%;
+    background:#fff;
+    border:1px solid #dee2e6;
+    border-radius:8px;
+    overflow:hidden
+}
+
+.card-header{
+    padding:18px 20px;
+    border-bottom:1px solid #dee2e6;
+    display:flex;
+    align-items:center;
+    justify-content:space-between
+}
+
+.card-header h3{
+    margin:0;
+    color:#003399;
+    font-size:17px
+}
+
+.card-header p{
+    margin:4px 0 0;
+    color:#888;
+    font-size:13px
+}
+
+.form-area{
+    padding:20px;
+    background:#fafbfc;
+    border-bottom:1px solid #eee
+}
+
+.form-grid{
+    display:grid;
+    grid-template-columns:1.2fr 2fr 1fr 1fr 1fr auto;
+    gap:15px;
+    align-items:end
+}
+
+.form-group label{
+    display:block;
+    margin-bottom:6px;
+    font-size:13px;
+    font-weight:600
+}
+
+input,
+select,
+textarea{
+    width:100%;
+    padding:10px 11px;
+    border:1px solid #d7dce1;
+    border-radius:6px;
+    background:#fff;
+    outline:none;
+    font-family:inherit
+}
+
+input,
+select{
+    height:40px
+}
+
+textarea{
+    min-height:90px;
+    resize:vertical
+}
+
+input:focus,
+select:focus,
+textarea:focus{
+    border-color:#003399;
+    box-shadow:0 0 0 3px rgba(0,51,153,.1)
+}
+
+button{
+    border:0;
+    border-radius:6px;
+    padding:10px 15px;
+    color:#fff;
+    cursor:pointer;
+    font-family:inherit;
+    font-size:13px
+}
+
+.primary{
+    background:#003399
+}
+
+.primary:hover{
+    background:#002266
+}
+
+.secondary{
+    background:#6c757d
+}
+
+.secondary:hover{
+    background:#565e64
+}
+
+.danger{
+    background:#dc3545
+}
+
+.danger:hover{
+    background:#b02a37
+}
+
+.success-btn{
+    background:#198754
+}
+
+.success-btn:hover{
+    background:#146c43
+}
+
+.message{
+    padding:12px 15px;
+    border-radius:6px;
+    margin-bottom:20px;
+    font-size:14px
+}
+
+.message.success{
+    background:#e8f5ee;
+    color:#198754;
+    border:1px solid #c8e6d3
+}
+
+.message.error{
+    background:#fdeaea;
+    color:#dc3545;
+    border:1px solid #f5c2c7
+}
+
+.table-wrapper{
+    width:100%;
+    overflow-x:auto
+}
+
+table{
+    width:100%;
+    border-collapse:collapse
+}
+
+th{
+    background:#003399;
+    color:#fff;
+    padding:13px 15px;
+    text-align:left;
+    font-size:13px;
+    font-weight:600
+}
+
+td{
+    padding:14px 15px;
+    border-bottom:1px solid #eee;
+    font-size:13px
+}
+
+tr:hover td{
+    background:#f8fafc
+}
+
+.actions{
+    display:flex;
+    gap:6px
+}
+
+.edit-area{
+    display:none;
+    background:#f8f9fa;
+    border-bottom:1px solid #eee
+}
+
+.edit-area.active{
+    display:table-row
+}
+
+.edit-grid{
+    display:grid;
+    grid-template-columns:1.2fr 2fr 1fr 1fr 1fr auto;
+    gap:12px;
+    align-items:end
+}
+
+.status{
+    display:inline-block;
+    padding:5px 10px;
+    border-radius:15px;
+    font-size:11px;
+    font-weight:600
+}
+
+.pending{
+    background:#fff3cd;
+    color:#856404
+}
+
+.approved{
+    background:#e8f5ee;
+    color:#198754
+}
+
+.rejected{
+    background:#fdeaea;
+    color:#dc3545
+}
+
+.device-status{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    font-weight:600;
+    font-size:13px
+}
+
+.device-status-dot{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+    display:inline-block
+}
+
+.device-active .device-status-dot{
+    background:#198754
+}
+
+.device-maintenance .device-status-dot{
+    background:#ffc107
+}
+
+.device-broken .device-status-dot{
+    background:#dc3545
+}
+
+.request-tabs{
+    display:flex;
+    gap:8px;
+    padding:0 0 15px;
+    margin-bottom:20px;
+    border-bottom:1px solid #dee2e6
+}
+
+.request-tabs a{
+    padding:10px 15px;
+    border:1px solid #dee2e6;
+    border-radius:6px;
+    color:#555;
+    text-decoration:none;
+    font-size:13px;
+    background:#f8f9fa;
+    white-space:nowrap
+}
+
+.request-tabs a.active{
+    color:#003399;
+    background:#fff;
+    font-weight:600
+}
+
+.calendar-card{
+    margin-top:25px
+}
+
+.calendar{
+    padding:20px
+}
+
+.calendar-toolbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:15px;
+    margin-bottom:15px
+}
+
+.calendar-toolbar h3{
+    margin:0;
+    color:#003399;
+    font-size:17px
+}
+
+.calendar-nav{
+    display:flex;
+    gap:6px
+}
+
+.calendar-nav button{
+    padding:8px 12px
+}
+
+.calendar-grid{
+    display:grid;
+    grid-template-columns:repeat(7,minmax(0,1fr));
+    border-top:1px solid #dee2e6;
+    border-left:1px solid #dee2e6
+}
+
+.calendar-weekday{
+    background:#f1f4f8;
+    color:#555;
+    font-size:12px;
+    font-weight:700;
+    text-align:center;
+    padding:10px 5px;
+    border-right:1px solid #dee2e6;
+    border-bottom:1px solid #dee2e6
+}
+
+.calendar-day{
+    min-height:125px;
+    padding:7px;
+    border-right:1px solid #dee2e6;
+    border-bottom:1px solid #dee2e6;
+    background:#fff;
+    overflow:hidden
+}
+
+.calendar-day.other-month{
+    background:#fafbfc;
+    color:#aaa
+}
+
+.calendar-day.today{
+    box-shadow:inset 0 0 0 2px #003399
+}
+
+.calendar-date{
+    font-size:12px;
+    font-weight:700;
+    margin-bottom:6px
+}
+
+.calendar-events{
+    display:flex;
+    flex-direction:column;
+    gap:4px
+}
+
+.calendar-event{
+    padding:5px 6px;
+    border-radius:4px;
+    font-size:10px;
+    line-height:1.25;
+    overflow:hidden;
+    white-space:nowrap;
+    text-overflow:ellipsis
+}
+
+.calendar-event.room{
+    background:#eaf0fa;
+    color:#003399;
+    border-left:3px solid #003399
+}
+
+.calendar-event.borrow{
+    background:#fff3cd;
+    color:#856404;
+    border-left:3px solid #ffc107
+}
+
+.calendar-more{
+    color:#003399;
+    font-size:10px;
+    font-weight:600;
+    padding:2px 4px
+}
+
+.calendar-legend{
+    display:flex;
+    gap:18px;
+    margin-top:12px;
+    font-size:12px;
+    color:#666
+}
+
+.legend-item{
+    display:flex;
+    align-items:center;
+    gap:6px
+}
+
+.legend-dot{
+    width:9px;
+    height:9px;
+    border-radius:50%
+}
+
+.legend-room{
+    background:#003399
+}
+
+.legend-borrow{
+    background:#ffc107
+}
+
+.request-table-status{
+    white-space:nowrap
+}
+
+.maintenance-form{
+    padding:20px;
+    background:#fafbfc;
+    border-bottom:1px solid #eee
+}
+
+.maintenance-form-grid{
+    display:grid;
+    grid-template-columns:1fr 2fr auto;
+    gap:15px;
+    align-items:end
+}
+
+.maintenance-info{
+    display:flex;
+    flex-direction:column;
+    gap:5px
+}
+
+.maintenance-info strong{
+    color:#003399;
+    font-size:13px
+}
+
+.maintenance-info span{
+    color:#777;
+    font-size:12px
+}
+
+.maintenance-result{
+    min-width:220px
+}
+
+.maintenance-complete{
+    color:#198754;
+    font-weight:600
+}
+
+.maintenance-working{
+    color:#b77900;
+    font-weight:600
+}
+
+.info-box{
+    padding:15px 20px;
+    background:#f8f9fa;
+    border-bottom:1px solid #eee;
+    color:#666;
+    font-size:13px;
+    line-height:1.6
+}
+
+@media(max-width:1100px){
+
+    .form-grid,
+    .edit-grid{
+        grid-template-columns:1fr 1fr 1fr
+    }
+
+    .maintenance-form-grid{
+        grid-template-columns:1fr 1fr
+    }
+}
+
+@media(max-width:900px){
+
+    .sidebar{
+        width:210px
+    }
+
+    .main{
+        width:calc(100% - 210px)
+    }
+
+    .content{
+        padding:25px
+    }
+
+    .calendar-day{
+        min-height:105px
+    }
+
+    .calendar-event{
+        font-size:9px
+    }
+}
+
+@media(max-width:700px){
+
+    .header{
+        padding:0 20px
+    }
+
+    .layout{
+        display:block
+    }
+
+    .sidebar{
+        width:100%;
+        border-right:0;
+        border-bottom:1px solid #dee2e6
+    }
+
+    .main{
+        width:100%
+    }
+
+    .content{
+        padding:20px
+    }
+
+    .stats{
+        grid-template-columns:1fr
+    }
+
+    .form-grid,
+    .edit-grid,
+    .maintenance-form-grid{
+        grid-template-columns:1fr
+    }
+
+    .request-tabs{
+        overflow-x:auto
+    }
+}
+</style>
 </head>
 
 <body>
 
-<div class="header">
-    HỆ THỐNG QUẢN LÝ PHÒNG THỰC HÀNH VÀ THIẾT BỊ
-</div>
+<header class="header">
+
+    <div class="header-title">
+        HỆ THỐNG QUẢN LÝ PHÒNG THỰC HÀNH VÀ THIẾT BỊ
+    </div>
+
+    <div class="staff">
+
+        <div class="avatar">S</div>
+
+        <div class="staff-name">
+            Đặng Đình Thái An
+        </div>
+
+    </div>
+
+</header>
 
 <div class="layout">
 
-    <aside class="sidebar">
-        <div class="sidebar-title">CÁN BỘ LAB</div>
+<aside class="sidebar">
 
-        <a href="index.php?page=devices" class="menu-item active">
-            Quản lý thiết bị
+    <div class="logo">
+
+        <h2>
+            QUẢN LÝ PHÒNG<br>
+            THỰC HÀNH
+        </h2>
+
+    </div>
+
+    <div class="menu-title">
+        DANH MỤC
+    </div>
+
+    <nav class="menu">
+
+        <a href="?page=devices"
+           class="<?php echo $page === 'devices' ? 'active' : ''; ?>">
+
+            <span class="icon">▣</span>
+            <span>Quản lý thiết bị</span>
+
         </a>
 
-        <a href="index.php?page=devices#bookings" class="menu-item">
-            Duyệt yêu cầu phòng
+        <a href="?page=bookings"
+           class="<?php echo in_array($page, ['bookings','borrowings'], true) ? 'active' : ''; ?>">
+
+            <span class="icon">▤</span>
+            <span>Duyệt yêu cầu phòng</span>
+
         </a>
 
-        <a href="index.php?page=devices#calendar" class="menu-item">
-            Lịch sử dụng
+        <a href="?page=maintenance"
+           class="<?php echo $page === 'maintenance' ? 'active' : ''; ?>">
+
+            <span class="icon">⚙</span>
+            <span>Bảo trì</span>
+
         </a>
-    </aside>
 
-    <main class="main">
+    </nav>
 
-        <div class="page-title">
-            Quản lý thiết bị
+</aside>
+
+<main class="main">
+
+<div class="content">
+
+<?php if ($message !== ""): ?>
+
+<div class="message <?php echo $messageType; ?>">
+    <?php echo $message; ?>
+</div>
+
+<?php endif; ?>
+
+
+<?php if ($page === "devices"): ?>
+
+<div class="page-title">
+
+    <h1>Quản lý thiết bị</h1>
+
+    <p>
+        Quản lý thông tin, vị trí và trạng thái thiết bị
+    </p>
+
+</div>
+
+<div class="stats">
+
+    <div class="stat">
+
+        <div class="stat-label">
+            Tổng thiết bị
         </div>
 
-        <?php if ($message !== ''): ?>
-            <div class="message">
-                <?= htmlspecialchars($message) ?>
-            </div>
-        <?php endif; ?>
-
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-title">Tổng thiết bị</div>
-                <div class="stat-number"><?= $totalDevices ?></div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-title">Đang hoạt động</div>
-                <div class="stat-number"><?= $activeDevices ?></div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-title">Đang bảo trì</div>
-                <div class="stat-number"><?= $maintenanceDevices ?></div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-title">Hỏng</div>
-                <div class="stat-number"><?= $brokenDevices ?></div>
-            </div>
+        <div class="stat-number">
+            <?php echo $totalDevices; ?>
         </div>
 
-        <div class="content-card">
-            <div class="card-header">
-                <div class="card-title">Thêm thiết bị</div>
-            </div>
+    </div>
 
-            <div class="card-body">
-                <form method="POST" action="index.php?page=devices">
+    <div class="stat">
 
-                    <input type="hidden" name="action" value="add">
-
-                    <div class="form-grid">
-
-                        <div class="form-group">
-                            <label>Mã thiết bị</label>
-                            <input
-                                type="text"
-                                name="device_code"
-                                placeholder="VD: TB001"
-                                required
-                            >
-                        </div>
-
-                        <div class="form-group">
-                            <label>Tên thiết bị</label>
-                            <input
-                                type="text"
-                                name="device_name"
-                                placeholder="Nhập tên thiết bị"
-                                required
-                            >
-                        </div>
-
-                        <div class="form-group">
-                            <label>Loại thiết bị</label>
-                            <select name="type_id" required>
-                                <option value="">-- Chọn loại thiết bị --</option>
-
-                                <?php foreach ($deviceTypes as $type): ?>
-                                    <option value="<?= (int)$type['id'] ?>">
-                                        <?= htmlspecialchars($type['name']) ?>
-                                    </option>
-                                <?php endforeach; ?>
-
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Phòng</label>
-                            <select name="room_id" required>
-                                <option value="">-- Chọn phòng --</option>
-
-                                <?php foreach ($rooms as $room): ?>
-                                    <option value="<?= (int)$room['id'] ?>">
-                                        <?= htmlspecialchars($room['room_code']) ?>
-                                        -
-                                        <?= htmlspecialchars($room['room_name']) ?>
-                                    </option>
-                                <?php endforeach; ?>
-
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Trạng thái</label>
-                            <select name="status">
-                                <option value="active">Tốt</option>
-                                <option value="maintenance">Đang bảo trì</option>
-                                <option value="broken">Hỏng</option>
-                            </select>
-                        </div>
-
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">
-                            Thêm thiết bị
-                        </button>
-                    </div>
-
-                </form>
-            </div>
+        <div class="stat-label">
+            Đang hoạt động
         </div>
 
-        <div class="content-card">
-            <div class="card-header">
-                <div class="card-title">Danh sách thiết bị</div>
-            </div>
+        <div class="stat-number">
+            <?php echo $activeDevices; ?>
+        </div>
 
-            <?php if (empty($devices)): ?>
+    </div>
 
-                <div class="empty">
-                    Chưa có thiết bị nào trong hệ thống.
+    <div class="stat">
+
+        <div class="stat-label">
+            Đang bảo trì / Hỏng
+        </div>
+
+        <div class="stat-number">
+            <?php echo $maintenanceDevices + $brokenDevices; ?>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="card">
+
+    <div class="card-header">
+
+        <div>
+
+            <h3>
+                Danh sách thiết bị
+            </h3>
+
+            <p>
+                Quản lý thông tin và trạng thái thiết bị
+            </p>
+
+        </div>
+
+    </div>
+
+    <div class="form-area">
+
+        <form method="POST">
+
+            <input type="hidden"
+                   name="action"
+                   value="add">
+
+            <div class="form-grid">
+
+                <div class="form-group">
+
+                    <label>
+                        Mã thiết bị
+                    </label>
+
+                    <input
+                        type="text"
+                        name="device_code"
+                        maxlength="50"
+                        placeholder="TB004"
+                        required
+                    >
+
                 </div>
 
-            <?php else: ?>
+                <div class="form-group">
 
-                <div class="card-body">
+                    <label>
+                        Tên thiết bị
+                    </label>
 
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>STT</th>
-                                <th>Mã thiết bị</th>
-                                <th>Tên thiết bị</th>
-                                <th>Loại thiết bị</th>
-                                <th>Phòng</th>
-                                <th>Trạng thái</th>
-                                <th>Thao tác</th>
-                            </tr>
-                        </thead>
+                    <input
+                        type="text"
+                        name="device_name"
+                        maxlength="100"
+                        placeholder="Nhập tên thiết bị"
+                        required
+                    >
 
-                        <tbody>
+                </div>
 
-                        <?php foreach ($devices as $index => $device): ?>
+                <div class="form-group">
 
-                            <tr id="device-row-<?= (int)$device['id'] ?>">
+                    <label>
+                        Loại thiết bị
+                    </label>
 
-                                <td><?= $index + 1 ?></td>
+                    <select name="type_id" required>
 
-                                <td>
-                                    <?= htmlspecialchars($device['device_code']) ?>
-                                </td>
+                        <option value="">
+                            Chọn loại
+                        </option>
 
-                                <td>
-                                    <?= htmlspecialchars($device['device_name']) ?>
-                                </td>
+                        <?php foreach ($deviceTypes as $type): ?>
 
-                                <td>
-                                    <?= htmlspecialchars($device['type_name']) ?>
-                                </td>
+                        <option value="<?php echo $type["id"]; ?>">
 
-                                <td>
-                                    <?= htmlspecialchars($device['room_code']) ?>
-                                    -
-                                    <?= htmlspecialchars($device['room_name']) ?>
-                                </td>
+                            <?php echo htmlspecialchars($type["name"]); ?>
 
-                                <td>
-                                    <span class="device-status <?= deviceStatusClass($device['status']) ?>">
-                                        <?= htmlspecialchars(deviceStatusText($device['status'])) ?>
-                                    </span>
-                                </td>
-
-                                <td>
-                                    <div class="action-group">
-
-                                        <button
-                                            type="button"
-                                            class="btn btn-edit"
-                                            onclick="editDevice(<?= (int)$device['id'] ?>)"
-                                        >
-                                            Sửa
-                                        </button>
-
-                                        <form
-                                            method="POST"
-                                            action="index.php?page=devices"
-                                            onsubmit="return confirm('Bạn có chắc muốn xóa thiết bị này không?')"
-                                        >
-                                            <input type="hidden" name="action" value="delete">
-                                            <input type="hidden" name="id" value="<?= (int)$device['id'] ?>">
-
-                                            <button type="submit" class="btn btn-delete">
-                                                Xóa
-                                            </button>
-                                        </form>
-
-                                    </div>
-                                </td>
-
-                            </tr>
-
-                            <tr
-                                id="edit-row-<?= (int)$device['id'] ?>"
-                                style="display:none;"
-                            >
-                                <td colspan="7">
-
-                                    <form
-                                        method="POST"
-                                        action="index.php?page=devices"
-                                    >
-
-                                        <input type="hidden" name="action" value="edit">
-                                        <input type="hidden" name="id" value="<?= (int)$device['id'] ?>">
-
-                                        <div class="form-grid">
-
-                                            <div class="form-group">
-                                                <label>Mã thiết bị</label>
-                                                <input
-                                                    type="text"
-                                                    name="device_code"
-                                                    value="<?= htmlspecialchars($device['device_code']) ?>"
-                                                    required
-                                                >
-                                            </div>
-
-                                            <div class="form-group">
-                                                <label>Tên thiết bị</label>
-                                                <input
-                                                    type="text"
-                                                    name="device_name"
-                                                    value="<?= htmlspecialchars($device['device_name']) ?>"
-                                                    required
-                                                >
-                                            </div>
-
-                                            <div class="form-group">
-                                                <label>Loại thiết bị</label>
-                                                <select name="type_id" required>
-
-                                                    <?php foreach ($deviceTypes as $type): ?>
-
-                                                        <option
-                                                            value="<?= (int)$type['id'] ?>"
-                                                            <?= (int)$type['id'] === (int)$device['type_id'] ? 'selected' : '' ?>
-                                                        >
-                                                            <?= htmlspecialchars($type['name']) ?>
-                                                        </option>
-
-                                                    <?php endforeach; ?>
-
-                                                </select>
-                                            </div>
-
-                                            <div class="form-group">
-                                                <label>Phòng</label>
-                                                <select name="room_id" required>
-
-                                                    <?php foreach ($rooms as $room): ?>
-
-                                                        <option
-                                                            value="<?= (int)$room['id'] ?>"
-                                                            <?= (int)$room['id'] === (int)$device['room_id'] ? 'selected' : '' ?>
-                                                        >
-                                                            <?= htmlspecialchars($room['room_code']) ?>
-                                                            -
-                                                            <?= htmlspecialchars($room['room_name']) ?>
-                                                        </option>
-
-                                                    <?php endforeach; ?>
-
-                                                </select>
-                                            </div>
-
-                                            <div class="form-group">
-                                                <label>Trạng thái</label>
-                                                <select name="status">
-
-                                                    <option
-                                                        value="active"
-                                                        <?= $device['status'] === 'active' ? 'selected' : '' ?>
-                                                    >
-                                                        Tốt
-                                                    </option>
-
-                                                    <option
-                                                        value="maintenance"
-                                                        <?= $device['status'] === 'maintenance' ? 'selected' : '' ?>
-                                                    >
-                                                        Đang bảo trì
-                                                    </option>
-
-                                                    <option
-                                                        value="broken"
-                                                        <?= $device['status'] === 'broken' ? 'selected' : '' ?>
-                                                    >
-                                                        Hỏng
-                                                    </option>
-
-                                                </select>
-                                            </div>
-
-                                        </div>
-
-                                        <div class="form-actions">
-
-                                            <button
-                                                type="submit"
-                                                class="btn btn-primary"
-                                            >
-                                                Lưu thay đổi
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                class="btn btn-cancel"
-                                                onclick="editDevice(<?= (int)$device['id'] ?>)"
-                                                style="margin-left:8px;"
-                                            >
-                                                Hủy
-                                            </button>
-
-                                        </div>
-
-                                    </form>
-
-                                </td>
-                            </tr>
+                        </option>
 
                         <?php endforeach; ?>
 
-                        </tbody>
-                    </table>
+                    </select>
 
                 </div>
 
-            <?php endif; ?>
+                <div class="form-group">
 
-        </div>
+                    <label>
+                        Phòng
+                    </label>
 
-        <div class="content-card section-spacing" id="bookings">
+                    <select name="room_id" required>
 
-            <div class="tabs">
+                        <option value="">
+                            Chọn phòng
+                        </option>
 
-                <div
-                    class="tab active"
-                    onclick="showTab('booking-tab', this)"
-                >
-                    Duyệt yêu cầu phòng
+                        <?php foreach ($rooms as $room): ?>
+
+                        <option value="<?php echo $room["id"]; ?>">
+
+                            <?php echo htmlspecialchars($room["room_code"]); ?>
+
+                        </option>
+
+                        <?php endforeach; ?>
+
+                    </select>
+
                 </div>
 
-                <div
-                    class="tab"
-                    onclick="showTab('calendar-tab', this)"
-                >
-                    Lịch sử dụng
+                <div class="form-group">
+
+                    <label>
+                        Trạng thái
+                    </label>
+
+                    <select name="status" required>
+
+                        <option value="active">
+                            Hoạt động
+                        </option>
+
+                        <option value="maintenance">
+                            Đang bảo trì
+                        </option>
+
+                        <option value="broken">
+                            Hỏng
+                        </option>
+
+                    </select>
+
                 </div>
 
-                <div
-                    class="tab"
-                    onclick="showTab('borrow-tab', this)"
-                >
-                    Yêu cầu mượn thiết bị
-                </div>
+                <button type="submit"
+                        class="primary">
+
+                    + Thêm thiết bị
+
+                </button>
 
             </div>
 
-            <div id="booking-tab" class="tab-content active">
+        </form>
 
-                <div class="card-body">
+    </div>
 
-                    <div class="stats">
+    <div class="table-wrapper">
 
-                        <div class="stat-card">
-                            <div class="stat-title">Tổng yêu cầu</div>
-                            <div class="stat-number">
-                                <?= $totalBookings ?>
-                            </div>
+        <table>
+
+            <thead>
+
+            <tr>
+
+                <th width="60">
+                    STT
+                </th>
+
+                <th>
+                    Mã thiết bị
+                </th>
+
+                <th>
+                    Tên thiết bị
+                </th>
+
+                <th>
+                    Loại thiết bị
+                </th>
+
+                <th>
+                    Phòng
+                </th>
+
+                <th width="150">
+                    Trạng thái
+                </th>
+
+                <th width="150">
+                    Thao tác
+                </th>
+
+            </tr>
+
+            </thead>
+
+            <tbody>
+
+            <?php foreach ($devices as $index => $device): ?>
+
+                <tr>
+
+                    <td>
+                        <?php echo $index + 1; ?>
+                    </td>
+
+                    <td>
+                        <strong>
+                            <?php echo htmlspecialchars($device["device_code"]); ?>
+                        </strong>
+                    </td>
+
+                    <td>
+                        <?php echo htmlspecialchars($device["device_name"]); ?>
+                    </td>
+
+                    <td>
+                        <?php echo htmlspecialchars(
+                            timTenLoai($device["type_id"], $deviceTypes)
+                        ); ?>
+                    </td>
+
+                    <td>
+                        <?php echo htmlspecialchars(
+                            timMaPhong($device["room_id"], $rooms)
+                        ); ?>
+                    </td>
+
+                    <td>
+
+                        <span class="device-status device-<?php echo $device["status"]; ?>">
+
+                            <span class="device-status-dot"></span>
+
+                            <?php echo $statusText[$device["status"]] ?? ""; ?>
+
+                        </span>
+
+                    </td>
+
+                    <td>
+
+                        <div class="actions">
+
+                            <button
+                                type="button"
+                                class="secondary"
+                                onclick="moSua(<?php echo $device['id']; ?>)"
+                            >
+                                Sửa
+                            </button>
+
+                            <form method="POST">
+
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="delete"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="id"
+                                    value="<?php echo $device['id']; ?>"
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="danger"
+                                    onclick="return confirm('Bạn có chắc muốn xóa thiết bị này không?')"
+                                >
+                                    Xóa
+                                </button>
+
+                            </form>
+
                         </div>
 
-                        <div class="stat-card">
-                            <div class="stat-title">Chờ duyệt</div>
-                            <div class="stat-number">
-                                <?= $pendingBookings ?>
+                    </td>
+
+                </tr>
+
+                <tr
+                    id="edit-<?php echo $device['id']; ?>"
+                    class="edit-area"
+                >
+
+                    <td colspan="7">
+
+                        <form method="POST">
+
+                            <input
+                                type="hidden"
+                                name="action"
+                                value="edit"
+                            >
+
+                            <input
+                                type="hidden"
+                                name="id"
+                                value="<?php echo $device['id']; ?>"
+                            >
+
+                            <div class="edit-grid">
+
+                                <div class="form-group">
+
+                                    <label>
+                                        Mã thiết bị
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="device_code"
+                                        maxlength="50"
+                                        value="<?php echo htmlspecialchars($device['device_code']); ?>"
+                                        required
+                                    >
+
+                                </div>
+
+                                <div class="form-group">
+
+                                    <label>
+                                        Tên thiết bị
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="device_name"
+                                        maxlength="100"
+                                        value="<?php echo htmlspecialchars($device['device_name']); ?>"
+                                        required
+                                    >
+
+                                </div>
+
+                                <div class="form-group">
+
+                                    <label>
+                                        Loại thiết bị
+                                    </label>
+
+                                    <select name="type_id" required>
+
+                                        <?php foreach ($deviceTypes as $type): ?>
+
+                                        <option
+                                            value="<?php echo $type['id']; ?>"
+                                            <?php echo $type["id"] == $device["type_id"] ? "selected" : ""; ?>
+                                        >
+
+                                            <?php echo htmlspecialchars($type["name"]); ?>
+
+                                        </option>
+
+                                        <?php endforeach; ?>
+
+                                    </select>
+
+                                </div>
+
+                                <div class="form-group">
+
+                                    <label>
+                                        Phòng
+                                    </label>
+
+                                    <select name="room_id" required>
+
+                                        <?php foreach ($rooms as $room): ?>
+
+                                        <option
+                                            value="<?php echo $room['id']; ?>"
+                                            <?php echo $room["id"] == $device["room_id"] ? "selected" : ""; ?>
+                                        >
+
+                                            <?php echo htmlspecialchars($room["room_code"]); ?>
+
+                                        </option>
+
+                                        <?php endforeach; ?>
+
+                                    </select>
+
+                                </div>
+
+                                <div class="form-group">
+
+                                    <label>
+                                        Trạng thái
+                                    </label>
+
+                                    <select name="status" required>
+
+                                        <option
+                                            value="active"
+                                            <?php echo $device["status"] === "active" ? "selected" : ""; ?>
+                                        >
+                                            Hoạt động
+                                        </option>
+
+                                        <option
+                                            value="maintenance"
+                                            <?php echo $device["status"] === "maintenance" ? "selected" : ""; ?>
+                                        >
+                                            Đang bảo trì
+                                        </option>
+
+                                        <option
+                                            value="broken"
+                                            <?php echo $device["status"] === "broken" ? "selected" : ""; ?>
+                                        >
+                                            Hỏng
+                                        </option>
+
+                                    </select>
+
+                                </div>
+
+                                <div class="actions">
+
+                                    <button
+                                        type="submit"
+                                        class="primary"
+                                    >
+                                        Lưu
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="secondary"
+                                        onclick="dongSua(<?php echo $device['id']; ?>)"
+                                    >
+                                        Hủy
+                                    </button>
+
+                                </div>
+
                             </div>
-                        </div>
 
-                        <div class="stat-card">
-                            <div class="stat-title">Đã xử lý</div>
-                            <div class="stat-number">
-                                <?= $processedBookings ?>
-                            </div>
-                        </div>
+                        </form>
 
-                    </div>
+                    </td>
 
-                    <?php if (empty($bookings)): ?>
+                </tr>
 
-                        <div class="empty">
-                            Chưa có yêu cầu đặt phòng.
+            <?php endforeach; ?>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<?php elseif ($page === "bookings" || $page === "borrowings"): ?>
+
+<div class="page-title">
+
+    <h1>DUYỆT YÊU CẦU</h1>
+
+    <p>
+        Cán bộ Lab xem và xử lý các yêu cầu từ người dùng
+    </p>
+
+</div>
+
+<div class="request-tabs">
+
+    <a
+        href="?page=bookings"
+        class="<?php echo $page === 'bookings' ? 'active' : ''; ?>"
+    >
+        Duyệt yêu cầu đặt phòng
+    </a>
+
+    <a
+        href="?page=borrowings"
+        class="<?php echo $page === 'borrowings' ? 'active' : ''; ?>"
+    >
+        Duyệt yêu cầu mượn thiết bị
+    </a>
+
+</div>
+
+
+<?php if ($page === "bookings"): ?>
+
+<div class="stats">
+
+    <div class="stat">
+
+        <div class="stat-label">
+            Tổng yêu cầu
+        </div>
+
+        <div class="stat-number">
+            <?php echo count($bookings); ?>
+        </div>
+
+    </div>
+
+    <div class="stat">
+
+        <div class="stat-label">
+            Chờ duyệt
+        </div>
+
+        <div class="stat-number">
+            <?php echo $pendingBookings; ?>
+        </div>
+
+    </div>
+
+    <div class="stat">
+
+        <div class="stat-label">
+            Đã xử lý
+        </div>
+
+        <div class="stat-number">
+            <?php echo $processedBookings; ?>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="card">
+
+    <div class="card-header">
+
+        <div>
+
+            <h3>
+                Danh sách yêu cầu đặt phòng
+            </h3>
+
+            <p>
+                Xem và duyệt các yêu cầu sử dụng phòng thực hành
+            </p>
+
+        </div>
+
+    </div>
+
+    <div class="table-wrapper">
+
+        <table>
+
+            <thead>
+
+            <tr>
+
+                <th>STT</th>
+                <th>Người đặt</th>
+                <th>Phòng</th>
+                <th>Bắt đầu</th>
+                <th>Kết thúc</th>
+                <th>Mục đích</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+
+            </tr>
+
+            </thead>
+
+            <tbody>
+
+            <?php foreach ($bookings as $index => $booking): ?>
+
+                <tr>
+
+                    <td>
+                        <?php echo $index + 1; ?>
+                    </td>
+
+                    <td>
+                        <?php echo htmlspecialchars(
+                            timTenUser($booking["user_id"], $users)
+                        ); ?>
+                    </td>
+
+                    <td>
+                        <?php echo htmlspecialchars(
+                            timMaPhong($booking["room_id"], $rooms)
+                        ); ?>
+                    </td>
+
+                    <td>
+                        <?php echo htmlspecialchars($booking["start_time"]); ?>
+                    </td>
+
+                    <td>
+                        <?php echo htmlspecialchars($booking["end_time"]); ?>
+                    </td>
+
+                    <td>
+                        <?php echo htmlspecialchars($booking["purpose"]); ?>
+                    </td>
+
+                    <td>
+
+                        <?php if ($booking["status"] === "pending"): ?>
+
+                            <span class="status pending">
+                                Chờ duyệt
+                            </span>
+
+                        <?php elseif ($booking["status"] === "approved"): ?>
+
+                            <span class="status approved">
+                                Đã duyệt
+                            </span>
+
+                        <?php else: ?>
+
+                            <span class="status rejected">
+                                Từ chối
+                            </span>
+
+                        <?php endif; ?>
+
+                    </td>
+
+                    <td>
+
+                    <?php if ($booking["status"] === "pending"): ?>
+
+                        <div class="actions">
+
+                            <form method="POST">
+
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="booking"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="id"
+                                    value="<?php echo $booking['id']; ?>"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="status"
+                                    value="approved"
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="success-btn"
+                                >
+                                    Đồng ý
+                                </button>
+
+                            </form>
+
+                            <form method="POST">
+
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="booking"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="id"
+                                    value="<?php echo $booking['id']; ?>"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="status"
+                                    value="rejected"
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="danger"
+                                >
+                                    Từ chối
+                                </button>
+
+                            </form>
+
                         </div>
 
                     <?php else: ?>
 
-                        <table>
-
-                            <thead>
-                                <tr>
-                                    <th>STT</th>
-                                    <th>Người đặt</th>
-                                    <th>Phòng</th>
-                                    <th>Bắt đầu</th>
-                                    <th>Kết thúc</th>
-                                    <th>Mục đích</th>
-                                    <th>Trạng thái</th>
-                                    <th>Thao tác</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-
-                            <?php foreach ($bookings as $index => $booking): ?>
-
-                                <tr>
-
-                                    <td><?= $index + 1 ?></td>
-
-                                    <td>
-                                        <?= htmlspecialchars($booking['user_name']) ?>
-                                    </td>
-
-                                    <td>
-                                        <?= htmlspecialchars($booking['room_code']) ?>
-                                        -
-                                        <?= htmlspecialchars($booking['room_name']) ?>
-                                    </td>
-
-                                    <td>
-                                        <?= htmlspecialchars(formatDateTime($booking['start_time'])) ?>
-                                    </td>
-
-                                    <td>
-                                        <?= htmlspecialchars(formatDateTime($booking['end_time'])) ?>
-                                    </td>
-
-                                    <td>
-                                        <?= htmlspecialchars($booking['purpose']) ?>
-                                    </td>
-
-                                    <td>
-                                        <span class="status <?= bookingStatusClass($booking['status']) ?>">
-                                            <?= htmlspecialchars(bookingStatusText($booking['status'])) ?>
-                                        </span>
-                                    </td>
-
-                                    <td>
-
-                                        <?php if ($booking['status'] === 'pending'): ?>
-
-                                            <div class="action-group">
-
-                                                <form
-                                                    method="POST"
-                                                    action="index.php?page=devices"
-                                                    onsubmit="return confirm('Bạn có chắc muốn duyệt yêu cầu này không?')"
-                                                >
-
-                                                    <input
-                                                        type="hidden"
-                                                        name="action"
-                                                        value="booking"
-                                                    >
-
-                                                    <input
-                                                        type="hidden"
-                                                        name="id"
-                                                        value="<?= (int)$booking['id'] ?>"
-                                                    >
-
-                                                    <input
-                                                        type="hidden"
-                                                        name="status"
-                                                        value="approved"
-                                                    >
-
-                                                    <button
-                                                        type="submit"
-                                                        class="btn btn-approve"
-                                                    >
-                                                        Duyệt
-                                                    </button>
-
-                                                </form>
-
-                                                <form
-                                                    method="POST"
-                                                    action="index.php?page=devices"
-                                                    onsubmit="return confirm('Bạn có chắc muốn từ chối yêu cầu này không?')"
-                                                >
-
-                                                    <input
-                                                        type="hidden"
-                                                        name="action"
-                                                        value="booking"
-                                                    >
-
-                                                    <input
-                                                        type="hidden"
-                                                        name="id"
-                                                        value="<?= (int)$booking['id'] ?>"
-                                                    >
-
-                                                    <input
-                                                        type="hidden"
-                                                        name="status"
-                                                        value="rejected"
-                                                    >
-
-                                                    <button
-                                                        type="submit"
-                                                        class="btn btn-reject"
-                                                    >
-                                                        Từ chối
-                                                    </button>
-
-                                                </form>
-
-                                            </div>
-
-                                        <?php else: ?>
-
-                                            <span style="color:#777;">
-                                                Đã xử lý
-                                            </span>
-
-                                        <?php endif; ?>
-
-                                    </td>
-
-                                </tr>
-
-                            <?php endforeach; ?>
-
-                            </tbody>
-
-                        </table>
+                        <span style="color:#888">
+                            Đã xử lý
+                        </span>
 
                     <?php endif; ?>
 
-                </div>
+                    </td>
 
-            </div>
+                </tr>
 
-            <div id="calendar-tab" class="tab-content">
+            <?php endforeach; ?>
 
-                <div class="card-body">
+            </tbody>
 
-                    <div class="calendar" id="calendar">
+        </table>
 
-                        <div class="calendar-header">
+    </div>
 
-                            <div class="calendar-title" id="calendarTitle"></div>
+</div>
 
-                            <div class="calendar-buttons">
+
+<?php else: ?>
+
+<div class="stats">
+
+    <div class="stat">
+
+        <div class="stat-label">
+            Tổng yêu cầu mượn
+        </div>
+
+        <div class="stat-number">
+            <?php echo count($borrowings); ?>
+        </div>
+
+    </div>
+
+    <div class="stat">
+
+        <div class="stat-label">
+            Chờ duyệt
+        </div>
+
+        <div class="stat-number">
+            <?php echo $pendingBorrowings; ?>
+        </div>
+
+    </div>
+
+    <div class="stat">
+
+        <div class="stat-label">
+            Đã xử lý
+        </div>
+
+        <div class="stat-number">
+            <?php echo $processedBorrowings; ?>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="card">
+
+    <div class="card-header">
+
+        <div>
+
+            <h3>
+                Danh sách yêu cầu mượn thiết bị
+            </h3>
+
+            <p>
+                Cán bộ Lab xem và duyệt các yêu cầu mượn thiết bị
+            </p>
+
+        </div>
+
+    </div>
+
+    <div class="info-box">
+        Phần yêu cầu mượn thiết bị hiện đang sử dụng dữ liệu giả để hoàn thiện giao diện.
+        CSDL nhóm hiện chưa có bảng lưu yêu cầu mượn thiết bị.
+    </div>
+
+    <div class="table-wrapper">
+
+        <table>
+
+            <thead>
+
+            <tr>
+
+                <th>STT</th>
+                <th>Người yêu cầu</th>
+                <th>Mã thiết bị</th>
+                <th>Thiết bị</th>
+                <th>Bắt đầu</th>
+                <th>Kết thúc</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+
+            </tr>
+
+            </thead>
+
+            <tbody>
+
+            <?php foreach ($borrowings as $index => $borrowing): ?>
+
+                <?php $borrowDevice = timThietBi($borrowing["device_id"], $devices); ?>
+
+                <tr>
+
+                    <td>
+                        <?php echo $index + 1; ?>
+                    </td>
+
+                    <td>
+                        <?php echo htmlspecialchars(
+                            timTenUser($borrowing["user_id"], $users)
+                        ); ?>
+                    </td>
+
+                    <td>
+                        <?php echo htmlspecialchars(
+                            $borrowDevice["device_code"] ?? ""
+                        ); ?>
+                    </td>
+
+                    <td>
+                        <?php echo htmlspecialchars(
+                            timTenThietBi($borrowing["device_id"], $devices)
+                        ); ?>
+                    </td>
+
+                    <td>
+                        <?php echo htmlspecialchars($borrowing["start_time"]); ?>
+                    </td>
+
+                    <td>
+                        <?php echo htmlspecialchars($borrowing["end_time"]); ?>
+                    </td>
+
+                    <td>
+
+                        <?php if ($borrowing["status"] === "pending"): ?>
+
+                            <span class="status pending">
+                                Chờ duyệt
+                            </span>
+
+                        <?php elseif ($borrowing["status"] === "approved"): ?>
+
+                            <span class="status approved">
+                                Đã duyệt
+                            </span>
+
+                        <?php else: ?>
+
+                            <span class="status rejected">
+                                Từ chối
+                            </span>
+
+                        <?php endif; ?>
+
+                    </td>
+
+                    <td>
+
+                    <?php if ($borrowing["status"] === "pending"): ?>
+
+                        <div class="actions">
+
+                            <form method="POST">
+
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="borrow"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="id"
+                                    value="<?php echo $borrowing['id']; ?>"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="status"
+                                    value="approved"
+                                >
 
                                 <button
-                                    type="button"
-                                    class="calendar-btn"
-                                    onclick="changeMonth(-1)"
+                                    type="submit"
+                                    class="success-btn"
                                 >
-                                    ‹
+                                    Đồng ý
                                 </button>
+
+                            </form>
+
+                            <form method="POST">
+
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="borrow"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="id"
+                                    value="<?php echo $borrowing['id']; ?>"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="status"
+                                    value="rejected"
+                                >
 
                                 <button
-                                    type="button"
-                                    class="calendar-btn"
-                                    onclick="goToday()"
+                                    type="submit"
+                                    class="danger"
                                 >
-                                    Hôm nay
+                                    Từ chối
                                 </button>
 
-                                <button
-                                    type="button"
-                                    class="calendar-btn"
-                                    onclick="changeMonth(1)"
-                                >
-                                    ›
-                                </button>
-
-                            </div>
+                            </form>
 
                         </div>
 
-                        <div class="calendar-grid">
+                    <?php else: ?>
 
-                            <div class="calendar-day-name">T2</div>
-                            <div class="calendar-day-name">T3</div>
-                            <div class="calendar-day-name">T4</div>
-                            <div class="calendar-day-name">T5</div>
-                            <div class="calendar-day-name">T6</div>
-                            <div class="calendar-day-name">T7</div>
-                            <div class="calendar-day-name">CN</div>
+                        <span style="color:#888">
+                            Đã xử lý
+                        </span>
 
-                        </div>
+                    <?php endif; ?>
 
-                        <div
-                            class="calendar-grid"
-                            id="calendarDays"
-                        ></div>
+                    </td>
 
-                    </div>
+                </tr>
 
-                </div>
+            <?php endforeach; ?>
 
-            </div>
+            </tbody>
 
-            <div id="borrow-tab" class="tab-content">
+        </table>
 
-                <div class="card-body">
+    </div>
 
-                    <div class="empty">
-                        Chức năng duyệt yêu cầu mượn thiết bị chưa được kết nối
-                        vì CSDL hiện tại của nhóm chưa có bảng lưu yêu cầu mượn thiết bị.
-                    </div>
+</div>
 
-                </div>
+<?php endif; ?>
+
+
+<div class="card calendar-card">
+
+    <div class="card-header">
+
+        <div>
+
+            <h3>
+                Lịch tổng hợp
+            </h3>
+
+            <p>
+                Lịch đặt phòng và lịch mượn thiết bị
+            </p>
+
+        </div>
+
+    </div>
+
+    <div class="calendar">
+
+        <div class="calendar-toolbar">
+
+            <h3 id="calendarTitle"></h3>
+
+            <div class="calendar-nav">
+
+                <button
+                    type="button"
+                    class="secondary"
+                    onclick="doiThang(-1)"
+                >
+                    ‹
+                </button>
+
+                <button
+                    type="button"
+                    class="secondary"
+                    onclick="veHomNay()"
+                >
+                    Hôm nay
+                </button>
+
+                <button
+                    type="button"
+                    class="secondary"
+                    onclick="doiThang(1)"
+                >
+                    ›
+                </button>
 
             </div>
 
         </div>
 
-    </main>
+        <div
+            class="calendar-grid"
+            id="calendarGrid"
+        ></div>
+
+        <div class="calendar-legend">
+
+            <div class="legend-item">
+
+                <span class="legend-dot legend-room"></span>
+
+                Lịch đặt phòng
+
+            </div>
+
+            <div class="legend-item">
+
+                <span class="legend-dot legend-borrow"></span>
+
+                Lịch mượn thiết bị
+
+            </div>
+
+        </div>
+
+    </div>
 
 </div>
 
+
+<?php elseif ($page === "maintenance"): ?>
+
+<div class="page-title">
+
+    <h1>BẢO TRÌ THIẾT BỊ</h1>
+
+    <p>
+        Theo dõi và xử lý tình trạng bảo trì thiết bị
+    </p>
+
+</div>
+
+<div class="stats">
+
+    <div class="stat">
+
+        <div class="stat-label">
+            Tổng thiết bị
+        </div>
+
+        <div class="stat-number">
+            <?php echo count($devices); ?>
+        </div>
+
+    </div>
+
+    <div class="stat">
+
+        <div class="stat-label">
+            Đang bảo trì
+        </div>
+
+        <div class="stat-number">
+            <?php echo $maintenanceDevices; ?>
+        </div>
+
+    </div>
+
+    <div class="stat">
+
+        <div class="stat-label">
+            Phiếu đã hoàn thành
+        </div>
+
+        <div class="stat-number">
+            <?php echo $completedMaintenance; ?>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="card">
+
+    <div class="card-header">
+
+        <div>
+
+            <h3>
+                Tạo phiếu bảo trì
+            </h3>
+
+            <p>
+                Đưa thiết bị vào trạng thái đang bảo trì
+            </p>
+
+        </div>
+
+    </div>
+
+    <div class="maintenance-form">
+
+        <form method="POST">
+
+            <input
+                type="hidden"
+                name="action"
+                value="maintenance_start"
+            >
+
+            <div class="maintenance-form-grid">
+
+                <div class="form-group">
+
+                    <label>
+                        Thiết bị
+                    </label>
+
+                    <select
+                        name="device_id"
+                        required
+                    >
+
+                        <option value="">
+                            Chọn thiết bị
+                        </option>
+
+                        <?php foreach ($devices as $device): ?>
+
+                        <option
+                            value="<?php echo $device["id"]; ?>"
+                        >
+
+                            <?php echo htmlspecialchars(
+                                $device["device_code"] . " - " . $device["device_name"]
+                            ); ?>
+
+                        </option>
+
+                        <?php endforeach; ?>
+
+                    </select>
+
+                </div>
+
+                <div class="form-group">
+
+                    <label>
+                        Nội dung bảo trì
+                    </label>
+
+                    <input
+                        type="text"
+                        name="description"
+                        maxlength="255"
+                        placeholder="Nhập nội dung cần bảo trì"
+                        required
+                    >
+
+                </div>
+
+                <button
+                    type="submit"
+                    class="primary"
+                >
+                    + Tạo phiếu bảo trì
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+    <div class="table-wrapper">
+
+        <table>
+
+            <thead>
+
+            <tr>
+
+                <th>STT</th>
+                <th>Mã thiết bị</th>
+                <th>Thiết bị</th>
+                <th>Nội dung</th>
+                <th>Ngày tạo</th>
+                <th>Trạng thái</th>
+                <th>Kết quả</th>
+                <th>Thao tác</th>
+
+            </tr>
+
+            </thead>
+
+            <tbody>
+
+            <?php if (empty($maintenance)): ?>
+
+            <tr>
+
+                <td
+                    colspan="8"
+                    style="text-align:center;color:#888"
+                >
+                    Chưa có phiếu bảo trì.
+                </td>
+
+            </tr>
+
+            <?php endif; ?>
+
+            <?php foreach ($maintenance as $index => $item): ?>
+
+                <?php $maintenanceDevice = timThietBi($item["device_id"], $devices); ?>
+
+                <tr>
+
+                    <td>
+                        <?php echo $index + 1; ?>
+                    </td>
+
+                    <td>
+
+                        <?php echo htmlspecialchars(
+                            $maintenanceDevice["device_code"] ?? ""
+                        ); ?>
+
+                    </td>
+
+                    <td>
+
+                        <div class="maintenance-info">
+
+                            <strong>
+
+                                <?php echo htmlspecialchars(
+                                    $maintenanceDevice["device_name"] ?? ""
+                                ); ?>
+
+                            </strong>
+
+                            <span>
+
+                                <?php echo htmlspecialchars(
+                                    timTenPhong(
+                                        $maintenanceDevice["room_id"] ?? 0,
+                                        $rooms
+                                    )
+                                ); ?>
+
+                            </span>
+
+                        </div>
+
+                    </td>
+
+                    <td>
+
+                        <?php echo htmlspecialchars(
+                            $item["description"]
+                        ); ?>
+
+                    </td>
+
+                    <td>
+
+                        <?php echo htmlspecialchars(
+                            $item["created_at"]
+                        ); ?>
+
+                    </td>
+
+                    <td>
+
+                        <?php if ($item["maintenance_status"] === "Hoàn thành"): ?>
+
+                            <span class="status approved">
+                                Hoàn thành
+                            </span>
+
+                        <?php else: ?>
+
+                            <span class="status pending">
+                                Đang bảo trì
+                            </span>
+
+                        <?php endif; ?>
+
+                    </td>
+
+                    <td>
+
+                        <?php echo htmlspecialchars(
+                            $item["result"]
+                        ); ?>
+
+                    </td>
+
+                    <td>
+
+                    <?php if ($item["maintenance_status"] !== "Hoàn thành"): ?>
+
+                        <button
+                            type="button"
+                            class="primary"
+                            onclick="moCapNhatBaoTri(<?php echo $item['maintenance_id']; ?>)"
+                        >
+                            Cập nhật
+                        </button>
+
+                    <?php else: ?>
+
+                        <span class="maintenance-complete">
+                            Đã hoàn thành
+                        </span>
+
+                    <?php endif; ?>
+
+                    </td>
+
+                </tr>
+
+                <?php if ($item["maintenance_status"] !== "Hoàn thành"): ?>
+
+                <tr
+                    id="maintenance-edit-<?php echo $item['maintenance_id']; ?>"
+                    class="edit-area"
+                >
+
+                    <td colspan="8">
+
+                        <form method="POST">
+
+                            <input
+                                type="hidden"
+                                name="action"
+                                value="maintenance_update"
+                            >
+
+                            <input
+                                type="hidden"
+                                name="maintenance_id"
+                                value="<?php echo $item['maintenance_id']; ?>"
+                            >
+
+                            <input
+                                type="hidden"
+                                name="device_id"
+                                value="<?php echo $item['device_id']; ?>"
+                            >
+
+                            <div class="edit-grid">
+
+                                <div class="form-group">
+
+                                    <label>
+                                        Trạng thái
+                                    </label>
+
+                                    <select
+                                        name="maintenance_status"
+                                        required
+                                    >
+
+                                        <option value="Đang bảo trì">
+                                            Đang bảo trì
+                                        </option>
+
+                                        <option value="Hoàn thành">
+                                            Hoàn thành
+                                        </option>
+
+                                    </select>
+
+                                </div>
+
+                                <div class="form-group"
+                                     style="grid-column:span 3">
+
+                                    <label>
+                                        Kết quả bảo trì
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="result"
+                                        value="<?php echo htmlspecialchars($item['result']); ?>"
+                                        placeholder="Nhập kết quả bảo trì"
+                                        required
+                                    >
+
+                                </div>
+
+                                <div class="actions">
+
+                                    <button
+                                        type="submit"
+                                        class="success-btn"
+                                    >
+                                        Lưu
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        class="secondary"
+                                        onclick="dongCapNhatBaoTri(<?php echo $item['maintenance_id']; ?>)"
+                                    >
+                                        Hủy
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </form>
+
+                    </td>
+
+                </tr>
+
+                <?php endif; ?>
+
+            <?php endforeach; ?>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+<?php endif; ?>
+
+</div>
+
+</main>
+
+</div>
+
+
 <script>
-    function editDevice(id) {
-        const row = document.getElementById('edit-row-' + id);
 
-        if (!row) {
-            return;
-        }
+const bookingCalendarData =
+<?php echo json_encode($bookings, JSON_UNESCAPED_UNICODE); ?>;
 
-        if (row.style.display === 'none' || row.style.display === '') {
-            row.style.display = 'table-row';
-        } else {
-            row.style.display = 'none';
-        }
+const borrowingCalendarData =
+<?php echo json_encode($borrowings, JSON_UNESCAPED_UNICODE); ?>;
+
+const calendarRooms =
+<?php echo json_encode($rooms, JSON_UNESCAPED_UNICODE); ?>;
+
+const calendarDevices =
+<?php echo json_encode($devices, JSON_UNESCAPED_UNICODE); ?>;
+
+const calendarUsers =
+<?php echo json_encode($users, JSON_UNESCAPED_UNICODE); ?>;
+
+let calendarDate = new Date();
+
+function findName(list,id){
+
+    const item = list.find(
+        x => Number(x.id) === Number(id)
+    );
+
+    if(!item){
+        return "";
     }
 
-    function showTab(tabId, element) {
-        const tabs = document.querySelectorAll('.tab-content');
-        const buttons = document.querySelectorAll('.tab');
+    return item.name ||
+           item.full_name ||
+           item.device_name ||
+           item.room_name ||
+           item.room_code ||
+           "";
+}
 
-        tabs.forEach(function(tab) {
-            tab.classList.remove('active');
-        });
+function dateKey(value){
 
-        buttons.forEach(function(button) {
-            button.classList.remove('active');
-        });
+    const match = String(value).match(
+        /(\d{2})\/(\d{2})\/(\d{4})/
+    );
 
-        const selectedTab = document.getElementById(tabId);
+    return match
+        ? `${match[3]}-${match[2]}-${match[1]}`
+        : "";
+}
 
-        if (selectedTab) {
-            selectedTab.classList.add('active');
-        }
+function taoLichCalendar(){
 
-        if (element) {
-            element.classList.add('active');
-        }
+    const grid = document.getElementById("calendarGrid");
+    const title = document.getElementById("calendarTitle");
 
-        if (tabId === 'calendar-tab') {
-            renderCalendar();
-        }
+    if(!grid || !title){
+        return;
     }
 
-    const bookings = <?= json_encode($bookings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
 
-    let calendarDate = new Date();
+    title.textContent =
+        `Tháng ${month + 1} ${year}`;
 
-    function dateKey(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
+    const names = [
+        "T2",
+        "T3",
+        "T4",
+        "T5",
+        "T6",
+        "T7",
+        "CN"
+    ];
 
-        return year + '-' + month + '-' + day;
-    }
+    let html = names
+        .map(
+            x => `<div class="calendar-weekday">${x}</div>`
+        )
+        .join("");
 
-    function bookingDateKey(datetime) {
-        if (!datetime) {
-            return '';
+    let start =
+        new Date(year,month,1).getDay();
+
+    start =
+        start === 0
+        ? 6
+        : start - 1;
+
+    const days =
+        new Date(year,month + 1,0).getDate();
+
+    const prevDays =
+        new Date(year,month,0).getDate();
+
+    const total =
+        Math.ceil((start + days) / 7) * 7;
+
+    const now = new Date();
+
+    const today =
+        `${now.getFullYear()}-${String(
+            now.getMonth()+1
+        ).padStart(2,"0")}-${String(
+            now.getDate()
+        ).padStart(2,"0")}`;
+
+    for(let i = 0; i < total; i++){
+
+        let day;
+        let cell;
+
+        if(i < start){
+
+            day =
+                prevDays - start + i + 1;
+
+            cell =
+                new Date(year,month - 1,day);
+
+        }else if(i < start + days){
+
+            day =
+                i - start + 1;
+
+            cell =
+                new Date(year,month,day);
+
+        }else{
+
+            day =
+                i - start - days + 1;
+
+            cell =
+                new Date(year,month + 1,day);
         }
 
-        const value = String(datetime);
+        const key =
+            `${cell.getFullYear()}-${String(
+                cell.getMonth()+1
+            ).padStart(2,"0")}-${String(
+                cell.getDate()
+            ).padStart(2,"0")}`;
 
-        if (value.length >= 10) {
-            return value.substring(0, 10);
-        }
+        let events = [];
 
-        return '';
-    }
+        bookingCalendarData.forEach(item => {
 
-    function renderCalendar() {
-        const calendarTitle = document.getElementById('calendarTitle');
-        const calendarDays = document.getElementById('calendarDays');
+            if(
+                item.status !== "rejected" &&
+                dateKey(item.start_time) === key
+            ){
 
-        if (!calendarTitle || !calendarDays) {
-            return;
-        }
+                events.push({
 
-        const year = calendarDate.getFullYear();
-        const month = calendarDate.getMonth();
+                    type:"room",
 
-        const monthNames = [
-            'Tháng 1',
-            'Tháng 2',
-            'Tháng 3',
-            'Tháng 4',
-            'Tháng 5',
-            'Tháng 6',
-            'Tháng 7',
-            'Tháng 8',
-            'Tháng 9',
-            'Tháng 10',
-            'Tháng 11',
-            'Tháng 12'
-        ];
+                    text:
+                        `${item.start_time.split(" ")[0]} ${
+                            findName(calendarRooms,item.room_id)
+                        }`,
 
-        calendarTitle.textContent = monthNames[month] + ' ' + year;
-
-        calendarDays.innerHTML = '';
-
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-
-        let startDay = firstDay.getDay();
-
-        if (startDay === 0) {
-            startDay = 6;
-        } else {
-            startDay = startDay - 1;
-        }
-
-        const previousMonthLastDay = new Date(year, month, 0).getDate();
-
-        for (let i = startDay - 1; i >= 0; i--) {
-            const day = previousMonthLastDay - i;
-            const cellDate = new Date(year, month - 1, day);
-
-            createCalendarCell(
-                cellDate,
-                true,
-                calendarDays
-            );
-        }
-
-        for (let day = 1; day <= lastDay.getDate(); day++) {
-            const cellDate = new Date(year, month, day);
-
-            createCalendarCell(
-                cellDate,
-                false,
-                calendarDays
-            );
-        }
-
-        const totalCells = startDay + lastDay.getDate();
-        const remainingCells = (7 - (totalCells % 7)) % 7;
-
-        for (let day = 1; day <= remainingCells; day++) {
-            const cellDate = new Date(year, month + 1, day);
-
-            createCalendarCell(
-                cellDate,
-                true,
-                calendarDays
-            );
-        }
-    }
-
-    function createCalendarCell(date, otherMonth, container) {
-        const cell = document.createElement('div');
-        cell.className = 'calendar-cell';
-
-        if (otherMonth) {
-            cell.classList.add('other-month');
-        }
-
-        const dateNumber = document.createElement('div');
-        dateNumber.className = 'calendar-date';
-        dateNumber.textContent = date.getDate();
-
-        cell.appendChild(dateNumber);
-
-        const key = dateKey(date);
-
-        const dayBookings = bookings.filter(function(booking) {
-            return bookingDateKey(booking.start_time) === key;
-        });
-
-        dayBookings.slice(0, 3).forEach(function(booking) {
-            const event = document.createElement('div');
-            event.className = 'calendar-event';
-
-            if (booking.status === 'approved') {
-                event.classList.add('booking');
+                    detail:
+                        `${findName(calendarUsers,item.user_id)} • ${
+                            item.start_time
+                        } - ${
+                            item.end_time
+                        }`
+                });
             }
-
-            if (booking.status === 'pending') {
-                event.classList.add('pending');
-            }
-
-            const startTime = formatTime(booking.start_time);
-            const room = booking.room_code || '';
-
-            event.textContent =
-                startTime + ' ' + room;
-
-            event.title =
-                (booking.user_name || '') +
-                ' - ' +
-                (booking.room_name || '') +
-                ' - ' +
-                (booking.purpose || '');
-
-            cell.appendChild(event);
         });
 
-        if (dayBookings.length > 3) {
-            const more = document.createElement('div');
-            more.className = 'calendar-more';
-            more.textContent =
-                '+' + (dayBookings.length - 3) + ' lịch khác';
+        borrowingCalendarData.forEach(item => {
 
-            cell.appendChild(more);
-        }
+            if(
+                item.status !== "rejected" &&
+                dateKey(item.start_time) === key
+            ){
 
-        container.appendChild(cell);
-    }
+                const device =
+                    calendarDevices.find(
+                        x =>
+                            Number(x.id) ===
+                            Number(item.device_id)
+                    );
 
-    function formatTime(datetime) {
-        if (!datetime || String(datetime).length < 16) {
-            return '';
-        }
+                const deviceName =
+                    device
+                    ? (
+                        device.device_name ||
+                        device.name ||
+                        ""
+                    )
+                    : "";
 
-        return String(datetime).substring(11, 16);
-    }
+                events.push({
 
-    function changeMonth(value) {
-        calendarDate.setMonth(
-            calendarDate.getMonth() + value
+                    type:"borrow",
+
+                    text:
+                        `${item.start_time.split(" ")[0]} ${deviceName}`,
+
+                    detail:
+                        `${findName(calendarUsers,item.user_id)} • ${
+                            item.start_time
+                        } - ${
+                            item.end_time
+                        }`
+                });
+            }
+        });
+
+        events.sort(
+            (a,b) =>
+                a.text.localeCompare(
+                    b.text,
+                    "vi"
+                )
         );
 
-        renderCalendar();
-    }
+        const visible =
+            events.slice(0,3);
 
-    function goToday() {
-        calendarDate = new Date();
-        renderCalendar();
-    }
+        const hidden =
+            events.length - visible.length;
 
-    document.addEventListener('DOMContentLoaded', function() {
-        if (window.location.hash === '#bookings') {
-            document.getElementById('bookings').scrollIntoView();
+        const other =
+            cell.getMonth() !== month
+            ? "other-month"
+            : "";
+
+        const current =
+            key === today
+            ? "today"
+            : "";
+
+        html +=
+            `<div class="calendar-day ${other} ${current}">
+                <div class="calendar-date">${day}</div>
+                <div class="calendar-events">`;
+
+        visible.forEach(event => {
+
+            const detail =
+                event.detail.replace(
+                    /"/g,
+                    "&quot;"
+                );
+
+            html +=
+                `<div
+                    class="calendar-event ${event.type}"
+                    title="${detail}"
+                >
+                    ${event.text}
+                </div>`;
+        });
+
+        if(hidden > 0){
+
+            html +=
+                `<div class="calendar-more">
+                    +${hidden} lịch khác
+                </div>`;
         }
 
-        if (window.location.hash === '#calendar') {
-            document.getElementById('bookings').scrollIntoView();
-            showTab(
-                'calendar-tab',
-                document.querySelectorAll('.tab')[1]
-            );
-        }
-    });
+        html +=
+            `</div></div>`;
+    }
+
+    grid.innerHTML = html;
+}
+
+function doiThang(delta){
+
+    calendarDate.setMonth(
+        calendarDate.getMonth() + delta
+    );
+
+    taoLichCalendar();
+}
+
+function veHomNay(){
+
+    calendarDate = new Date();
+
+    taoLichCalendar();
+}
+
+function moSua(id){
+
+    const row =
+        document.getElementById(
+            "edit-" + id
+        );
+
+    if(row){
+        row.classList.add("active");
+    }
+}
+
+function dongSua(id){
+
+    const row =
+        document.getElementById(
+            "edit-" + id
+        );
+
+    if(row){
+        row.classList.remove("active");
+    }
+}
+
+function moCapNhatBaoTri(id){
+
+    const row =
+        document.getElementById(
+            "maintenance-edit-" + id
+        );
+
+    if(row){
+        row.classList.add("active");
+    }
+}
+
+function dongCapNhatBaoTri(id){
+
+    const row =
+        document.getElementById(
+            "maintenance-edit-" + id
+        );
+
+    if(row){
+        row.classList.remove("active");
+    }
+}
+
+document.addEventListener(
+    "DOMContentLoaded",
+    taoLichCalendar
+);
+
 </script>
 
 </body>

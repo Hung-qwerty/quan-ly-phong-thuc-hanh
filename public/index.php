@@ -1,5 +1,6 @@
 <?php
 session_start();
+
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\Core\Database;
@@ -10,11 +11,12 @@ use App\Controller\MaintenanceController;
 use App\Repository\BookingRepository;
 use App\Controller\BookingController;
 
-$route = $_GET['route'] ?? 'login';
+$route = $_GET['page'] ?? $_GET['route'] ?? 'login';
+
 $pdo = Database::connection();
 
-// Điều hướng theo route trên URL
 switch ($route) {
+
     case 'login':
         require_once __DIR__ . '/../src/View/auth/login.php';
         break;
@@ -29,33 +31,28 @@ switch ($route) {
         header('Location: index.php?route=login');
         exit;
 
-    // Phân hệ quản lý user của Hùng (TV1)
     case 'users':
         $userRepo = new UserRepository($pdo);
         $userController = new UserController($userRepo);
         $userController->index();
         break;
 
-    // Phân hệ của TV2 (Phòng thực hành) - Ví dụ tích hợp từ pages cũ hoặc refactor sang Controller
     case 'rooms':
-        // Gọi Controller phòng học hoặc require file tương ứng từ cấu trúc mới
         require_once __DIR__ . '/../src/View/student/TV2-quanlyphongthuchanh.php';
         break;
 
-    // Phân hệ của TV3 (Booking)
     case 'bookings':
         $bookingRepo = new BookingRepository($pdo);
         $bookingController = new BookingController($bookingRepo);
         $bookingController->index();
         break;
 
-    // Phân hệ của TV4 (Thiết bị)
     case 'devices':
         require_once __DIR__ . '/../src/Repository/DeviceRepository.php';
         require_once __DIR__ . '/../src/Controller/DeviceController.php';
 
-        $deviceRepo = new DeviceRepository($pdo);
-        $deviceController = new DeviceController($deviceRepo);
+        $deviceRepo = new \App\Repository\DeviceRepository($pdo);
+        $deviceController = new \App\Controller\DeviceController($deviceRepo);
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $deviceController->handleRequest();
@@ -64,10 +61,12 @@ switch ($route) {
         }
         break;
 
-    // Phân hệ của TV5 (Bảo trì)
     case 'maintenance':
-        $maintenanceRepo = new MaintenanceRepository($pdo);
-        $maintenanceController = new MaintenanceController($maintenanceRepo);
+        require_once __DIR__ . '/../src/Repository/MaintenanceRepository.php';
+        require_once __DIR__ . '/../src/Controller/MaintenanceController.php';
+
+        $maintenanceRepo = new \App\Repository\MaintenanceRepository($pdo);
+        $maintenanceController = new \App\Controller\MaintenanceController($maintenanceRepo);
         $maintenanceController->index();
         break;
 
