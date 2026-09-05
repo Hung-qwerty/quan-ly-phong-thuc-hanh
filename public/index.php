@@ -5,6 +5,8 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use App\Core\Database;
 use App\Repository\UserRepository;
 use App\Controller\UserController;
+use App\Repository\MaintenanceRepository;
+use App\Controller\MaintenanceController;
 
 $route = $_GET['route'] ?? 'login';
 $pdo = Database::connection();
@@ -50,7 +52,9 @@ switch ($route) {
 
     // Phân hệ của TV5 (Bảo trì)
     case 'maintenance':
-        require_once __DIR__ . '/../src/View/staff/baotritv5/bao_tri.php';
+        $maintenanceRepo = new MaintenanceRepository($pdo);
+        $maintenanceController = new MaintenanceController($maintenanceRepo);
+        $maintenanceController->index();
         break;
 
     default:
