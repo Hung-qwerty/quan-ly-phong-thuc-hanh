@@ -1,5 +1,4 @@
 <?php
-session_start();
 session_unset();
 session_destroy();
 session_start(); 
@@ -79,7 +78,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <button type="submit" class="btn btn-primary w-100">Đăng Nhập</button>
         </form>
         <div class="text-center mt-3">
-            <small>Chưa có tài khoản sinh viên? <a href="register.php">Đăng ký ngay</a></small>
+            <small>Chưa có tài khoản sinh viên? <a href="index.php?route=register">Đăng ký ngay</a></small>
         </div>
     </div>
 </body>

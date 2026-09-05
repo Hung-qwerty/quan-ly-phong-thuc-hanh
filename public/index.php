@@ -1,18 +1,23 @@
 <?php
+session_start();
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\Core\Database;
 use App\Repository\UserRepository;
 use App\Controller\UserController;
 
-// Lấy route từ URL, mặc định nếu không truyền sẽ trỏ về danh sách user
-$route = $_GET['route'] ?? 'users';
-
-// Khởi tạo kết nối PDO dùng chung qua Database Core
+$route = $_GET['route'] ?? 'login';
 $pdo = Database::connection();
 
-// Router điều hướng đơn giản
 switch ($route) {
+    case 'login':
+        require_once __DIR__ . '/../src/View/auth/login.php';
+        break;
+
+    case 'register':
+         require_once __DIR__ . '/../src/View/auth/register.php';
+    break;
+
     case 'users':
         $userRepo = new UserRepository($pdo);
         $userController = new UserController($userRepo);

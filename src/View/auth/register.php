@@ -45,7 +45,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <?php endif; ?>
         <?php if (!empty($success)): ?>
             <div class="alert alert-success py-2"><?php echo $success; ?></div>
-            <a href="login.php" class="btn btn-primary w-100 mt-2">Đăng nhập ngay</a>
+            <a href="index.php?route=login" class="btn btn-primary w-100 mt-2">Đăng nhập ngay</a>
         <?php else: ?>
             <form method="POST">
                 <div class="mb-3">
