@@ -33,15 +33,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $base_url = "/quan-ly-phong-thuc-hanh";
 
                 if ($user['role'] == 'admin') {
-                    header("Location: " . $base_url . "/pages/admin/quan_ly_user.php");
-                    exit;
-                } elseif ($user['role'] == 'staff') {
-                    header("Location: " . $base_url . "/pages/staff/formbaotritv5.php");
-                    exit;
-                } else {
-                    header("Location: " . $base_url . "/pages/student/TV3-quanlybooking.php");
-                    exit;
-                }
+                    header("Location: index.php?route=users");
+                    exit();
+            } elseif ($user['role'] == 'staff') {
+                    header("Location: index.php?route=maintenance");
+                    exit();
+            } else {
+                    header("Location: index.php?route=bookings");
+                    exit();
+}
             }
         } else {
             $error = "Tên đăng nhập hoặc mật khẩu không chính xác!";
