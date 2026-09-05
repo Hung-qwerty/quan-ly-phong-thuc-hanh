@@ -7,6 +7,8 @@ use App\Repository\UserRepository;
 use App\Controller\UserController;
 use App\Repository\MaintenanceRepository;
 use App\Controller\MaintenanceController;
+use App\Repository\BookingRepository;
+use App\Controller\BookingController;
 
 $route = $_GET['route'] ?? 'login';
 $pdo = Database::connection();
@@ -42,7 +44,9 @@ switch ($route) {
 
     // Phân hệ của TV3 (Booking)
     case 'bookings':
-        require_once __DIR__ . '/../src/View/student/TV3-quanlybooking.php';
+        $bookingRepo = new BookingRepository($pdo);
+        $bookingController = new BookingController($bookingRepo);
+        $bookingController->index();
         break;
 
     // Phân hệ của TV4 (Thiết bị)
