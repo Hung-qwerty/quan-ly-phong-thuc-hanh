@@ -45,7 +45,17 @@ switch ($route) {
 
     // Phân hệ của TV4 (Thiết bị)
     case 'devices':
-        require_once __DIR__ . '/../src/View/staff/themthietbitv4.php';
+        require_once __DIR__ . '/../src/Repository/DeviceRepository.php';
+        require_once __DIR__ . '/../src/Controller/DeviceController.php';
+
+        $deviceRepo = new DeviceRepository($pdo);
+        $deviceController = new DeviceController($deviceRepo);
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $deviceController->handleRequest();
+        } else {
+            $deviceController->index();
+        }
         break;
 
     // Phân hệ của TV5 (Bảo trì)
