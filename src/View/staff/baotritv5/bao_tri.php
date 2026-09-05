@@ -1,10 +1,12 @@
 <?php
-require_once __DIR__ . "/ketnoi.php";
+
+use App\Core\Database;
+$conn = Database::connection();
+ 
 require_once __DIR__ . "/bao_tri_ham.php";
 require_once __DIR__ . "/bao_tri_xu_ly.php";
 require_once __DIR__ . "/bao_tri_truy_van.php";
 
-// Lấy danh sách thiết bị
 $thietbi = layDanhSachThietBi($conn);
 
 // Thống kê

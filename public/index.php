@@ -50,7 +50,7 @@ switch ($route) {
 
     // Phân hệ của TV5 (Bảo trì)
     case 'maintenance':
-        require_once __DIR__ . '/../src/View/staff/baotri/bao_tri.php';
+        require_once __DIR__ . '/../src/View/staff/baotritv5/bao_tri.php';
         break;
 
     default:

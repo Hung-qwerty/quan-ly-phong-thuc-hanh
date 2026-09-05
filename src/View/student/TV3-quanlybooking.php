@@ -1,22 +1,7 @@
 <?php
-session_start();
 
-$host = "127.0.0.1";
-$dbname = "quan_ly_phong_thuc_hanh";
-$username = "root";
-$password = "";
-
-try {
-    $pdo = new PDO(
-        "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
-        $username,
-        $password
-    );
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    die("Không thể kết nối database: " . $e->getMessage());
-}
+use App\Core\Database;
+$pdo = Database::connection();
 
 function e($value) {
     return htmlspecialchars($value ?? "", ENT_QUOTES, "UTF-8");

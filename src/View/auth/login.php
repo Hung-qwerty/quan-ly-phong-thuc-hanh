@@ -1,9 +1,4 @@
 <?php
-session_unset();
-session_destroy();
-session_start(); 
-
-require_once '../config/database.php';
 $error = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -13,9 +8,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($username) || empty($password)) {
         $error = "Vui lòng nhập tên đăng nhập và mật khẩu!";
     } else {
-        $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
+
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
         $stmt->execute([$username]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        $user = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
             if (isset($user['status']) && $user['status'] == 'pending') {
@@ -23,25 +19,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             } elseif (isset($user['status']) && $user['status'] == 'rejected') {
                 $error = "Tài khoản của bạn đã bị từ chối truy cập!";
             } else {
-                // Lưu thông tin vào Session
+     
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['full_name'] = $user['full_name'];
                 $_SESSION['role'] = $user['role'];
 
-                // Dùng đường dẫn chuẩn xác tuyệt đối từ thư mục gốc của project
-                $base_url = "/quan-ly-phong-thuc-hanh";
-
                 if ($user['role'] == 'admin') {
                     header("Location: index.php?route=users");
                     exit();
-            } elseif ($user['role'] == 'staff') {
+                } elseif ($user['role'] == 'staff') {
                     header("Location: index.php?route=maintenance");
                     exit();
-            } else {
+                } else {
                     header("Location: index.php?route=bookings");
                     exit();
-}
+                }
             }
         } else {
             $error = "Tên đăng nhập hoặc mật khẩu không chính xác!";
