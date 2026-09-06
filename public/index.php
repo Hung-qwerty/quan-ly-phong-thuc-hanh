@@ -6,8 +6,8 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use App\Core\Database;
 use App\Repository\UserRepository;
 use App\Controller\UserController;
-use App\Repository\MaintenanceRepository;
-use App\Controller\MaintenanceController;
+use App\Repository\DeviceMaintenanceRepository;
+use App\Controller\DeviceMaintenanceController;
 use App\Repository\RoomBookingRepository;
 use App\Controller\RoomBookingController;
 
@@ -50,27 +50,16 @@ switch ($route) {
         $bookingController->index();
         break;
 
-    case 'devices':
-        require_once __DIR__ . '/../src/Repository/DeviceRepository.php';
-        require_once __DIR__ . '/../src/Controller/DeviceController.php';
-
-        $deviceRepo = new \App\Repository\DeviceRepository($pdo);
-        $deviceController = new \App\Controller\DeviceController($deviceRepo);
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $deviceController->handleRequest();
-        } else {
-            $deviceController->index();
-        }
+case 'devices':
+        $devMaintRepo = new DeviceMaintenanceRepository($pdo);
+        $devMaintController = new DeviceMaintenanceController($devMaintRepo);
+        $devMaintController->indexDevices();
         break;
 
     case 'maintenance':
-        require_once __DIR__ . '/../src/Repository/MaintenanceRepository.php';
-        require_once __DIR__ . '/../src/Controller/MaintenanceController.php';
-
-        $maintenanceRepo = new \App\Repository\MaintenanceRepository($pdo);
-        $maintenanceController = new \App\Controller\MaintenanceController($maintenanceRepo);
-        $maintenanceController->index();
+        $devMaintRepo = new DeviceMaintenanceRepository($pdo);
+        $devMaintController = new DeviceMaintenanceController($devMaintRepo);
+        $devMaintController->indexMaintenance();
         break;
 
     default:
