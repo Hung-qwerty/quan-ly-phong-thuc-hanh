@@ -15,14 +15,14 @@ class UserController {
         // Xử lý duyệt sinh viên
         if (isset($_GET['action']) && $_GET['action'] == 'approve' && isset($_GET['id'])) {
             $this->userRepo->approveStudent((int)$_GET['id']);
-            header("Location: index.php?route=users&tab=students&msg=approved");
+            header("Location: /quan-ly-phong-thuc-hanh/public/index.php?route=users&tab=students&msg=approved");
             exit;
         }
 
         // Xử lý xóa tài khoản
         if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
             $this->userRepo->deleteUser((int)$_GET['id']);
-            header("Location: index.php?route=users&tab=" . $tab . "&msg=deleted");
+            header("Location: /quan-ly-phong-thuc-hanh/public/index.php?route=users&tab=" . $tab . "&msg=deleted");
             exit;
         }
 

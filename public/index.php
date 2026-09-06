@@ -45,7 +45,6 @@ switch ($route) {
         $bookingController->index();
         break;
 
-    // LUỒNG MỚI CỦA AN: QUẢN LÝ THIẾT BỊ & DUYỆT LỊCH
     case 'devices':
     case 'staff_bookings':
     case 'borrowings':
@@ -59,7 +58,6 @@ switch ($route) {
         }
         break;
 
-    // LUỒNG MỚI CỦA AN: BẢO TRÌ
     case 'maintenance':
         $maintenanceRepo = new MaintenanceRepository($pdo);
         $maintenanceController = new MaintenanceController($maintenanceRepo);
