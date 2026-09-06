@@ -1,37 +1,81 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <title>Quản lý User - MVC</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light p-4">
-    <div class="container bg-white p-4 rounded shadow-sm">
-        <h3 class="mb-3">Danh sách Người dùng (Chuẩn MVC)</h3>
-        <table class="table table-bordered align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>ID</th>
-                    <th>Username</th>
-                    <th>Họ tên</th>
-                    <th>Vai trò</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (!empty($users)): ?>
-                    <?php foreach ($users as $u): ?>
-                    <tr>
-                        <td><?= $u['id'] ?></td>
-                        <td><?= htmlspecialchars($u['username']) ?></td>
-                        <td><?= htmlspecialchars($u['full_name']) ?></td>
-                        <td><span class="badge bg-info text-dark"><?= $u['role'] ?></span></td>
-                    </tr>
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <tr><td colspan="4" class="text-center text-muted">Không có dữ liệu.</td></tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
-    </div>
-</body>
-</html>
+<?php
+
+session_start();
+
+require_once __DIR__ . '/../config/database.php';
+
+require_once __DIR__ . '/../src/Repository/UserRepository.php';
+require_once __DIR__ . '/../src/Controller/UserController.php';
+
+require_once __DIR__ . '/../src/Repository/RoomBookingRepository.php';
+require_once __DIR__ . '/../src/Controller/RoomBookingController.php';
+
+use App\Repository\UserRepository;
+use App\Controller\UserController;
+
+use App\Repository\RoomBookingRepository;
+use App\Controller\RoomBookingController;
+
+$page = $_GET['page'] ?? 'users';
+
+switch ($page) {
+
+    case 'users':
+
+        $userRepo = new UserRepository($pdo);
+        $userController = new UserController($userRepo);
+        $userController->index();
+
+        break;
+
+
+    case 'bookings':
+    case 'rooms':
+
+        $bookingRepo = new RoomBookingRepository($pdo);
+        $bookingController = new RoomBookingController($bookingRepo);
+        $bookingController->index();
+
+        break;
+
+
+    case 'devices':
+    case 'staff_bookings':
+    case 'borrowings':
+
+        require_once __DIR__ . '/../src/Repository/DeviceRepository.php';
+        require_once __DIR__ . '/../src/Controller/DeviceController.php';
+
+        $deviceRepo = new \App\Repository\DeviceRepository($pdo);
+        $deviceController = new \App\Controller\DeviceController($deviceRepo);
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $deviceController->handleRequest();
+        } else {
+            $deviceController->index();
+        }
+
+        break;
+
+
+    case 'maintenance':
+
+        require_once __DIR__ . '/../src/Repository/MaintenanceRepository.php';
+        require_once __DIR__ . '/../src/Controller/MaintenanceController.php';
+
+        $maintenanceRepo = new \App\Repository\MaintenanceRepository($pdo);
+        $maintenanceController = new \App\Controller\MaintenanceController($maintenanceRepo);
+
+        $maintenanceController->index();
+
+        break;
+
+
+    default:
+
+        $userRepo = new UserRepository($pdo);
+        $userController = new UserController($userRepo);
+        $userController->index();
+
+        break;
+}

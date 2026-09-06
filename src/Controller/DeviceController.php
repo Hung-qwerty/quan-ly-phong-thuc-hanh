@@ -22,9 +22,47 @@ class DeviceController
         $bookings = $this->deviceRepo->getBookings();
 
         $message = $_SESSION['device_message'] ?? '';
-        unset($_SESSION['device_message']);
+        $messageType = $_SESSION['device_message_type'] ?? '';
 
-        $page = 'devices';
+        unset($_SESSION['device_message']);
+        unset($_SESSION['device_message_type']);
+
+        $page = $_GET['page'] ?? 'devices';
+
+        if (!in_array($page, ['devices', 'staff_bookings', 'borrowings'], true)) {
+            $page = 'devices';
+        }
+
+        $pendingBookings = 0;
+        $processedBookings = 0;
+
+        foreach ($bookings as $booking) {
+            if ($booking['status'] === 'pending') {
+                $pendingBookings++;
+            } else {
+                $processedBookings++;
+            }
+        }
+
+        $borrowings = [];
+
+        $pendingBorrowings = 0;
+        $processedBorrowings = 0;
+
+        $totalDevices = count($devices);
+        $activeDevices = 0;
+        $maintenanceDevices = 0;
+        $brokenDevices = 0;
+
+        foreach ($devices as $device) {
+            if ($device['status'] === 'active') {
+                $activeDevices++;
+            } elseif ($device['status'] === 'maintenance') {
+                $maintenanceDevices++;
+            } elseif ($device['status'] === 'broken') {
+                $brokenDevices++;
+            }
+        }
 
         require __DIR__ . '/../View/staff/themthietbitv4.php';
     }
@@ -41,6 +79,10 @@ class DeviceController
         switch ($action) {
             case 'add':
                 $this->addDevice();
+                break;
+
+            case 'add_type':
+                $this->addDeviceType();
                 break;
 
             case 'edit':
@@ -61,6 +103,36 @@ class DeviceController
         }
     }
 
+    private function addDeviceType(): void
+    {
+        $name = trim($_POST['type_name'] ?? '');
+
+        if ($name === '') {
+            $this->setMessage(
+                'Vui lòng nhập tên loại thiết bị.',
+                'error'
+            );
+
+            $this->redirect('devices');
+        }
+
+        try {
+            $this->deviceRepo->addDeviceType($name);
+
+            $this->setMessage(
+                'Thêm loại thiết bị thành công!',
+                'success'
+            );
+        } catch (PDOException $e) {
+            $this->setMessage(
+                'Không thể thêm loại thiết bị.',
+                'error'
+            );
+        }
+
+        $this->redirect('devices');
+    }
+
     private function addDevice(): void
     {
         $deviceCode = trim($_POST['device_code'] ?? '');
@@ -75,8 +147,12 @@ class DeviceController
             $typeId <= 0 ||
             $roomId <= 0
         ) {
-            $_SESSION['device_message'] = 'Vui lòng nhập đầy đủ thông tin thiết bị.';
-            $this->redirect();
+            $this->setMessage(
+                'Vui lòng nhập đầy đủ thông tin thiết bị.',
+                'error'
+            );
+
+            $this->redirect('devices');
         }
 
         if (!in_array($status, ['active', 'broken', 'maintenance'], true)) {
@@ -92,12 +168,18 @@ class DeviceController
                 $status
             );
 
-            $_SESSION['device_message'] = 'Thêm thiết bị thành công.';
+            $this->setMessage(
+                'Thêm thiết bị thành công!',
+                'success'
+            );
         } catch (PDOException $e) {
-            $_SESSION['device_message'] = 'Không thể thêm thiết bị. Mã thiết bị có thể đã tồn tại.';
+            $this->setMessage(
+                'Không thể thêm thiết bị. Mã thiết bị có thể đã tồn tại.',
+                'error'
+            );
         }
 
-        $this->redirect();
+        $this->redirect('devices');
     }
 
     private function editDevice(): void
@@ -116,8 +198,12 @@ class DeviceController
             $typeId <= 0 ||
             $roomId <= 0
         ) {
-            $_SESSION['device_message'] = 'Thông tin thiết bị không hợp lệ.';
-            $this->redirect();
+            $this->setMessage(
+                'Thông tin thiết bị không hợp lệ.',
+                'error'
+            );
+
+            $this->redirect('devices');
         }
 
         if (!in_array($status, ['active', 'broken', 'maintenance'], true)) {
@@ -134,12 +220,18 @@ class DeviceController
                 $status
             );
 
-            $_SESSION['device_message'] = 'Cập nhật thiết bị thành công.';
+            $this->setMessage(
+                'Cập nhật thiết bị thành công!',
+                'success'
+            );
         } catch (PDOException $e) {
-            $_SESSION['device_message'] = 'Không thể cập nhật thiết bị. Mã thiết bị có thể đã tồn tại.';
+            $this->setMessage(
+                'Không thể cập nhật thiết bị. Mã thiết bị có thể đã tồn tại.',
+                'error'
+            );
         }
 
-        $this->redirect();
+        $this->redirect('devices');
     }
 
     private function deleteDevice(): void
@@ -147,18 +239,29 @@ class DeviceController
         $id = (int)($_POST['id'] ?? 0);
 
         if ($id <= 0) {
-            $_SESSION['device_message'] = 'Thiết bị không hợp lệ.';
-            $this->redirect();
+            $this->setMessage(
+                'Thiết bị không hợp lệ.',
+                'error'
+            );
+
+            $this->redirect('devices');
         }
 
         try {
             $this->deviceRepo->deleteDevice($id);
-            $_SESSION['device_message'] = 'Xóa thiết bị thành công.';
+
+            $this->setMessage(
+                'Xóa thiết bị thành công!',
+                'success'
+            );
         } catch (PDOException $e) {
-            $_SESSION['device_message'] = 'Không thể xóa thiết bị.';
+            $this->setMessage(
+                'Không thể xóa thiết bị. Thiết bị có thể đang được sử dụng.',
+                'error'
+            );
         }
 
-        $this->redirect();
+        $this->redirect('devices');
     }
 
     private function handleBooking(): void
@@ -170,20 +273,32 @@ class DeviceController
             $id <= 0 ||
             !in_array($status, ['approved', 'rejected'], true)
         ) {
-            $_SESSION['device_message'] = 'Yêu cầu phòng không hợp lệ.';
-            $this->redirect();
+            $this->setMessage(
+                'Yêu cầu phòng không hợp lệ.',
+                'error'
+            );
+
+            $this->redirect('staff_bookings');
         }
 
         $booking = $this->deviceRepo->getBookingById($id);
 
         if (!$booking) {
-            $_SESSION['device_message'] = 'Không tìm thấy yêu cầu đặt phòng.';
-            $this->redirect();
+            $this->setMessage(
+                'Không tìm thấy yêu cầu đặt phòng.',
+                'error'
+            );
+
+            $this->redirect('staff_bookings');
         }
 
         if ($booking['status'] !== 'pending') {
-            $_SESSION['device_message'] = 'Yêu cầu này đã được xử lý.';
-            $this->redirect();
+            $this->setMessage(
+                'Yêu cầu này đã được xử lý.',
+                'error'
+            );
+
+            $this->redirect('staff_bookings');
         }
 
         if ($status === 'approved') {
@@ -195,25 +310,56 @@ class DeviceController
             );
 
             if ($conflict) {
-                $_SESSION['device_message'] = 'Không thể duyệt. Phòng đã có lịch được duyệt trong khoảng thời gian này.';
-                $this->redirect();
+                $this->setMessage(
+                    'Không thể duyệt. Phòng đã có lịch được duyệt trong khoảng thời gian này.',
+                    'error'
+                );
+
+                $this->redirect('staff_bookings');
             }
         }
 
-        $this->deviceRepo->updateBookingStatus($id, $status);
+        try {
+            $this->deviceRepo->updateBookingStatus(
+                $id,
+                $status
+            );
 
-        if ($status === 'approved') {
-            $_SESSION['device_message'] = 'Đã duyệt yêu cầu đặt phòng.';
-        } else {
-            $_SESSION['device_message'] = 'Đã từ chối yêu cầu đặt phòng.';
+            if ($status === 'approved') {
+                $this->setMessage(
+                    'Đã đồng ý yêu cầu đặt phòng!',
+                    'success'
+                );
+            } else {
+                $this->setMessage(
+                    'Đã từ chối yêu cầu đặt phòng!',
+                    'success'
+                );
+            }
+        } catch (PDOException $e) {
+            $this->setMessage(
+                'Không thể cập nhật yêu cầu đặt phòng.',
+                'error'
+            );
         }
 
-        $this->redirect();
+        $this->redirect('staff_bookings');
     }
 
-    private function redirect(): void
+    private function setMessage(
+        string $message,
+        string $type
+    ): void {
+        $_SESSION['device_message'] = $message;
+        $_SESSION['device_message_type'] = $type;
+    }
+
+    private function redirect(string $page = 'devices'): void
     {
-        header('Location: index.php?page=devices');
+        header(
+            'Location: index.php?page=' . urlencode($page)
+        );
+
         exit;
     }
 }

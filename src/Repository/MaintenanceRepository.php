@@ -89,7 +89,9 @@ class MaintenanceRepository
             }
 
             if ($device['status'] !== 'broken') {
-                throw new Exception('Chỉ thiết bị đang hỏng mới có thể bắt đầu bảo trì.');
+                throw new Exception(
+                    'Chỉ thiết bị đang hỏng mới có thể bắt đầu bảo trì.'
+                );
             }
 
             $stmt = $this->pdo->prepare(
@@ -104,13 +106,22 @@ class MaintenanceRepository
             $stmt->execute([$deviceId]);
 
             if ($stmt->fetch()) {
-                throw new Exception('Thiết bị này đang có phiếu bảo trì.');
+                throw new Exception(
+                    'Thiết bị này đang có phiếu bảo trì.'
+                );
             }
 
             $stmt = $this->pdo->prepare(
                 "INSERT INTO maintenance
-                (device_id, staff_id, description, status, created_at)
-                VALUES (?, ?, ?, 'Đang bảo trì', NOW())"
+                (
+                    device_id,
+                    staff_id,
+                    description,
+                    status,
+                    created_at
+                )
+                VALUES
+                (?, ?, ?, 'Đang bảo trì', NOW())"
             );
 
             $stmt->execute([
@@ -131,8 +142,16 @@ class MaintenanceRepository
 
             $stmt = $this->pdo->prepare(
                 "INSERT INTO maintenance_history
-                (maintenance_id, device_id, staff_id, maintenance_date, content, result)
-                VALUES (?, ?, ?, CURDATE(), ?, 'Đang thực hiện')"
+                (
+                    maintenance_id,
+                    device_id,
+                    staff_id,
+                    maintenance_date,
+                    content,
+                    result
+                )
+                VALUES
+                (?, ?, ?, CURDATE(), ?, 'Đang thực hiện')"
             );
 
             $stmt->execute([
@@ -145,7 +164,9 @@ class MaintenanceRepository
             $this->pdo->commit();
 
             return $maintenanceId;
+
         } catch (Exception $e) {
+
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
@@ -176,11 +197,15 @@ class MaintenanceRepository
             $maintenance = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$maintenance) {
-                throw new Exception('Không tìm thấy phiếu bảo trì.');
+                throw new Exception(
+                    'Không tìm thấy phiếu bảo trì.'
+                );
             }
 
             if ((int)$maintenance['device_id'] !== $deviceId) {
-                throw new Exception('Phiếu bảo trì không thuộc thiết bị đã chọn.');
+                throw new Exception(
+                    'Phiếu bảo trì không thuộc thiết bị đã chọn.'
+                );
             }
 
             $stmt = $this->pdo->prepare(
@@ -211,10 +236,19 @@ class MaintenanceRepository
             ]);
 
             if ($stmt->rowCount() === 0) {
+
                 $stmt = $this->pdo->prepare(
                     "INSERT INTO maintenance_history
-                    (maintenance_id, device_id, staff_id, maintenance_date, content, result)
-                    VALUES (?, ?, ?, CURDATE(), ?, ?)"
+                    (
+                        maintenance_id,
+                        device_id,
+                        staff_id,
+                        maintenance_date,
+                        content,
+                        result
+                    )
+                    VALUES
+                    (?, ?, ?, CURDATE(), ?, ?)"
                 );
 
                 $stmt->execute([
@@ -242,7 +276,9 @@ class MaintenanceRepository
             ]);
 
             $this->pdo->commit();
+
         } catch (Exception $e) {
+
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }

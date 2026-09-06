@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -28,53 +29,71 @@ switch ($route) {
     case 'logout':
         session_unset();
         session_destroy();
+
         header('Location: index.php?route=login');
         exit;
 
     case 'users':
+
         $userRepo = new UserRepository($pdo);
         $userController = new UserController($userRepo);
+
         $userController->index();
+
         break;
 
     case 'bookings':
     case 'rooms':
-        $bookingRepo = new RoomBookingRepository($pdo);
-        $bookingController = new RoomBookingController($bookingRepo);
-        $bookingController->index();
-        break;
 
-    case 'bookings':
         $bookingRepo = new RoomBookingRepository($pdo);
         $bookingController = new RoomBookingController($bookingRepo);
+
         $bookingController->index();
+
         break;
 
     case 'devices':
+    case 'staff_bookings':
+    case 'borrowings':
+
         require_once __DIR__ . '/../src/Repository/DeviceRepository.php';
         require_once __DIR__ . '/../src/Controller/DeviceController.php';
 
         $deviceRepo = new \App\Repository\DeviceRepository($pdo);
-        $deviceController = new \App\Controller\DeviceController($deviceRepo);
+
+        $deviceController =
+            new \App\Controller\DeviceController($deviceRepo);
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $deviceController->handleRequest();
         } else {
             $deviceController->index();
         }
+
         break;
 
     case 'maintenance':
+
         require_once __DIR__ . '/../src/Repository/MaintenanceRepository.php';
         require_once __DIR__ . '/../src/Controller/MaintenanceController.php';
 
-        $maintenanceRepo = new \App\Repository\MaintenanceRepository($pdo);
-        $maintenanceController = new \App\Controller\MaintenanceController($maintenanceRepo);
+        $maintenanceRepo =
+            new \App\Repository\MaintenanceRepository($pdo);
+
+        $maintenanceController =
+            new \App\Controller\MaintenanceController(
+                $maintenanceRepo
+            );
+
         $maintenanceController->index();
+
         break;
 
     default:
+
         http_response_code(404);
+
         echo "404 - Không tìm thấy trang yêu cầu!";
+
         break;
 }

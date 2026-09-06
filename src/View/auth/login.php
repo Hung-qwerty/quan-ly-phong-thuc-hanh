@@ -14,12 +14,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $user = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
+
             if (isset($user['status']) && $user['status'] == 'pending') {
                 $error = "Tài khoản của bạn đang chờ Admin phê duyệt!";
             } elseif (isset($user['status']) && $user['status'] == 'rejected') {
                 $error = "Tài khoản của bạn đã bị từ chối truy cập!";
             } else {
-     
+
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['full_name'] = $user['full_name'];
@@ -28,51 +29,105 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 if ($user['role'] == 'admin') {
                     header("Location: index.php?route=users");
                     exit();
+
                 } elseif ($user['role'] == 'staff') {
-                    header("Location: index.php?route=maintenance");
+                    header("Location: index.php?route=devices");
                     exit();
+
                 } else {
                     header("Location: index.php?route=bookings");
                     exit();
                 }
             }
+
         } else {
             $error = "Tên đăng nhập hoặc mật khẩu không chính xác!";
         }
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <title>Đăng nhập hệ thống</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <style>
-        body { background-color: #f4f7f9; font-family: 'Segoe UI', sans-serif; }
-        .card-custom { border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        body {
+            background-color: #f4f7f9;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .card-custom {
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
     </style>
 </head>
+
 <body class="d-flex align-items-center justify-content-center vh-100">
+
     <div class="card card-custom p-4 bg-white" style="width: 400px;">
-        <h3 class="text-center mb-3 text-primary">Đăng Nhập Hệ Thống</h3>
+
+        <h3 class="text-center mb-3 text-primary">
+            Đăng Nhập Hệ Thống
+        </h3>
+
         <?php if (!empty($error)): ?>
-            <div class="alert alert-danger py-2"><?php echo $error; ?></div>
+            <div class="alert alert-danger py-2">
+                <?php echo $error; ?>
+            </div>
         <?php endif; ?>
+
         <form method="POST">
+
             <div class="mb-3">
-                <label class="form-label">Tên đăng nhập</label>
-                <input type="text" name="username" class="form-control" placeholder="Nhập username..." required>
+                <label class="form-label">
+                    Tên đăng nhập
+                </label>
+
+                <input
+                    type="text"
+                    name="username"
+                    class="form-control"
+                    placeholder="Nhập username..."
+                    required
+                >
             </div>
+
             <div class="mb-3">
-                <label class="form-label">Mật khẩu</label>
-                <input type="password" name="password" class="form-control" placeholder="Nhập mật khẩu..." required>
+                <label class="form-label">
+                    Mật khẩu
+                </label>
+
+                <input
+                    type="password"
+                    name="password"
+                    class="form-control"
+                    placeholder="Nhập mật khẩu..."
+                    required
+                >
             </div>
-            <button type="submit" class="btn btn-primary w-100">Đăng Nhập</button>
+
+            <button type="submit" class="btn btn-primary w-100">
+                Đăng Nhập
+            </button>
+
         </form>
+
         <div class="text-center mt-3">
-            <small>Chưa có tài khoản sinh viên? <a href="index.php?route=register">Đăng ký ngay</a></small>
+            <small>
+                Chưa có tài khoản sinh viên?
+                <a href="index.php?route=register">
+                    Đăng ký ngay
+                </a>
+            </small>
         </div>
+
     </div>
+
 </body>
 </html>

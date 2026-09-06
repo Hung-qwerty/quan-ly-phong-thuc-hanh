@@ -42,6 +42,18 @@ class DeviceRepository
         return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function addDeviceType(string $name): bool
+    {
+        $sql = "INSERT INTO device_types (name)
+                VALUES (:name)";
+
+        $stmt = $this->pdo->prepare($sql);
+
+        return $stmt->execute([
+            ':name' => $name
+        ]);
+    }
+
     public function getRooms(): array
     {
         $sql = "SELECT id, room_code, room_name, capacity, status

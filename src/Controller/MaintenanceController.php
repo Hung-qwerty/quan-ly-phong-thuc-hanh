@@ -19,14 +19,16 @@ class MaintenanceController
         $thongbao = '';
         $loi = '';
 
-        $staffId = (int)($_SESSION['user_id'] ?? $_SESSION['staff_id'] ?? 0);
+        $staffId = (int)($_SESSION['user_id'] ?? 0);
 
         if ($staffId <= 0) {
             $staffId = $this->maintenanceRepo->getFallbackStaffId();
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
             if (isset($_POST['batdau_baotri'])) {
+
                 $deviceId = (int)($_POST['device_id'] ?? 0);
                 $description = trim($_POST['description'] ?? '');
 
@@ -52,6 +54,7 @@ class MaintenanceController
             }
 
             if (isset($_POST['capnhat'])) {
+
                 $maintenanceId = (int)($_POST['maintenance_id'] ?? 0);
                 $deviceId = (int)($_POST['device_id'] ?? 0);
                 $status = trim($_POST['status'] ?? '');
@@ -89,17 +92,18 @@ class MaintenanceController
             }
         }
 
-        $thietbi = $this->maintenanceRepo->getAllDevicesWithMaintenance();
+        $maintenanceDevices = $this->maintenanceRepo->getAllDevicesWithMaintenance();
 
         $stats = [
-            'tong' => count($thietbi),
+            'tong' => count($maintenanceDevices),
             'hoatdong' => 0,
             'hong' => 0,
             'baotri' => 0
         ];
 
-        foreach ($thietbi as $tb) {
-            $status = trim((string)($tb['device_status'] ?? ''));
+        foreach ($maintenanceDevices as $device) {
+
+            $status = trim((string)($device['device_status'] ?? ''));
 
             if ($status === 'active') {
                 $stats['hoatdong']++;
