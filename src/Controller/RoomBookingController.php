@@ -66,7 +66,7 @@ class RoomBookingController
         }
 
         $rooms = $this->roomRepo->findAllRooms();
-        $devices = $this->roomRepo->findAllDevices();
+        $devices = $this->roomRepo->findReportableDevices($userId);
         $myBookings = $this->roomRepo->findBookingsByUser($userId);
         $myReports = $this->roomRepo->findReportsByUser($userId);
 

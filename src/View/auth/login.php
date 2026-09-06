@@ -1,4 +1,5 @@
 <?php
+/** @var PDO $pdo */
 $error = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -6,9 +7,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $password = $_POST['password'] ?? '';
 
     if (empty($username) || empty($password)) {
-        $error = "Vui lòng nhập tên đăng nhập và mật khẩu!";
+        $error = "Vui lòng nhập tài khoản và mật khẩu!";
     } else {
-
         $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
         $stmt->execute([$username]);
         $user = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -29,11 +29,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 if ($user['role'] == 'admin') {
                     header("Location: index.php?route=users");
                     exit();
-
                 } elseif ($user['role'] == 'staff') {
                     header("Location: index.php?route=devices");
                     exit();
-
                 } else {
                     header("Location: index.php?route=bookings");
                     exit();
@@ -41,7 +39,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
 
         } else {
-            $error = "Tên đăng nhập hoặc mật khẩu không chính xác!";
+            $error = "Mã sinh viên/Tên đăng nhập hoặc mật khẩu không chính xác!";
         }
     }
 }
@@ -52,82 +50,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <title>Đăng nhập hệ thống</title>
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
     <style>
-        body {
-            background-color: #f4f7f9;
-            font-family: 'Segoe UI', sans-serif;
-        }
-
-        .card-custom {
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
+        body { background-color: #f4f7f9; font-family: 'Segoe UI', sans-serif; }
+        .card-custom { border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
     </style>
 </head>
-
 <body class="d-flex align-items-center justify-content-center vh-100">
-
     <div class="card card-custom p-4 bg-white" style="width: 400px;">
-
-        <h3 class="text-center mb-3 text-primary">
-            Đăng Nhập Hệ Thống
-        </h3>
-
+        <h3 class="text-center mb-3 text-primary">Đăng Nhập Hệ Thống</h3>
+        
         <?php if (!empty($error)): ?>
-            <div class="alert alert-danger py-2">
-                <?php echo $error; ?>
-            </div>
+            <div class="alert alert-danger py-2"><?php echo $error; ?></div>
         <?php endif; ?>
 
         <form method="POST">
-
             <div class="mb-3">
-                <label class="form-label">
-                    Tên đăng nhập
-                </label>
-
-                <input
-                    type="text"
-                    name="username"
-                    class="form-control"
-                    placeholder="Nhập username..."
-                    required
-                >
+                <label class="form-label">Mã sinh viên / Tên đăng nhập</label>
+                <input type="text" name="username" class="form-control" placeholder="Nhập mã SV hoặc username..." required>
             </div>
-
             <div class="mb-3">
-                <label class="form-label">
-                    Mật khẩu
-                </label>
-
-                <input
-                    type="password"
-                    name="password"
-                    class="form-control"
-                    placeholder="Nhập mật khẩu..."
-                    required
-                >
+                <label class="form-label">Mật khẩu</label>
+                <input type="password" name="password" class="form-control" placeholder="Nhập mật khẩu..." required>
             </div>
-
-            <button type="submit" class="btn btn-primary w-100">
-                Đăng Nhập
-            </button>
-
+            <button type="submit" class="btn btn-primary w-100">Đăng Nhập</button>
         </form>
 
         <div class="text-center mt-3">
-            <small>
-                Chưa có tài khoản sinh viên?
-                <a href="index.php?route=register">
-                    Đăng ký ngay
-                </a>
-            </small>
+            <small>Chưa có tài khoản sinh viên? <a href="index.php?route=register">Đăng ký ngay</a></small>
         </div>
-
     </div>
-
 </body>
 </html>

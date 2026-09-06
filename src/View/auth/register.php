@@ -1,8 +1,10 @@
 <?php
+/** @var PDO $pdo */
 $error = "";
 $success = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Vẫn dùng biến username để lưu vào Database cho nhất quán hệ thống
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
     $fullname = trim($_POST['fullname'] ?? '');
@@ -10,17 +12,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($username) || empty($password) || empty($fullname)) {
         $error = "Vui lòng điền đầy đủ tất cả các trường!";
     } else {
-
         $stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
         $stmt->execute([$username]);
         
         if ($stmt->rowCount() > 0) {
-            $error = "Tên đăng nhập này đã tồn tại!";
+            $error = "Mã sinh viên này đã được đăng ký trong hệ thống!";
         } else {
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
             $stmt_ins = $pdo->prepare("INSERT INTO users (username, password, full_name, role, status) VALUES (?, ?, ?, 'student', 'pending')");
             if ($stmt_ins->execute([$username, $hashed_password, $fullname])) {
-                $success = "Đăng ký thành công! Tài khoản của bạn đang chờ Admin phê duyệt.";
+                $success = "Đăng ký thành công! Tài khoản đang chờ Admin phê duyệt.";
             } else {
                 $error = "Có lỗi xảy ra, vui lòng thử lại.";
             }
@@ -49,20 +50,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <form method="POST">
                 <div class="mb-3">
                     <label class="form-label">Họ và tên</label>
-                    <input type="text" name="fullname" class="form-control" required>
+                    <input type="text" name="fullname" class="form-control" placeholder="Nhập họ tên đầy đủ..." required>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Tên đăng nhập</label>
-                    <input type="text" name="username" class="form-control" required>
+                    <label class="form-label">Mã sinh viên</label>
+                    <input type="text" name="username" class="form-control" placeholder="Nhập mã sinh viên (VD: 202410...)" required>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Mật khẩu</label>
-                    <input type="password" name="password" class="form-control" required>
+                    <input type="password" name="password" class="form-control" placeholder="Nhập mật khẩu..." required>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">Đăng ký</button>
             </form>
             <div class="text-center mt-3">
-                <small>Đã có tài khoản? <a href="login.php">Đăng nhập</a></small>
+                <small>Đã có tài khoản? <a href="index.php?route=login">Đăng nhập</a></small>
             </div>
         <?php endif; ?>
     </div>

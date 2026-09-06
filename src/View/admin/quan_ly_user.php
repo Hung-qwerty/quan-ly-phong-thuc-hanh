@@ -79,7 +79,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link <?php echo (($tab ?? '') == 'students') ? 'active' : ''; ?>" href="../../public/index.php?route=users&tab=students">
+                <a class="nav-link <?php echo (($tab ?? '') == 'students') ? 'active' : ''; ?>" href="index.php?route=users&tab=students">
                     Duyệt tài khoản Sinh viên
                 </a>
             </li>
@@ -144,7 +144,7 @@
                         <thead class="table-light">
                             <tr>
                                 <th>STT</th>
-                                <th>Username</th>
+                                <th>Mã sinh viên</th>
                                 <th>Họ tên</th>
                                 <th>Vai trò</th>
                                 <th class="text-center">Thao tác</th>
@@ -205,9 +205,9 @@
                                     </td>
                                     <td class="text-center">
                                         <?php if (($student['status'] ?? '') == 'pending'): ?>
-                                            <a href="/quan-ly-phong-thuc-hanh/public/index.php?route=users&tab=students&action=approve&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-success me-1">Duyệt</a>
+                                            <a href="index.php?route=users&tab=students&action=approve&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-success me-1">Duyệt</a>
                                         <?php endif; ?>
-                                        <a href="/quan-ly-phong-thuc-hanh/public/index.php?route=users&tab=students&action=delete&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc muốn xóa sinh viên này?');">Xóa</a>
+                                        <a href="index.php?route=users&tab=students&action=delete&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc muốn xóa sinh viên này?');">Xóa</a>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -226,4 +226,4 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-</html>
+</html>1

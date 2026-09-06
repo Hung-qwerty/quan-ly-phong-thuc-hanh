@@ -193,18 +193,15 @@ class DeviceController
         $roomId = (int)($_POST['room_id'] ?? 0);
         $status = $_POST['status'] ?? 'active';
 
-        if (
-            $id <= 0 ||
-            $deviceCode === '' ||
-            $deviceName === '' ||
-            $typeId <= 0 ||
-            $roomId <= 0
-        ) {
-            $this->setMessage(
-                'Thông tin thiết bị không hợp lệ.',
-                'error'
-            );
+        if ($id <= 0 || $deviceCode === '' || $deviceName === '' || $typeId <= 0 || $roomId <= 0) {
+            $this->setMessage('Thông tin thiết bị không hợp lệ.', 'error');
+            $this->redirect('devices');
+        }
 
+        // VÁ LỖI BYPASS BẢO TRÌ: Chặn việc tự ý đổi trạng thái từ Hỏng -> Hoạt động qua form sửa
+        $currentDevice = $this->deviceRepo->getDeviceById($id);
+        if ($currentDevice && in_array($currentDevice['status'], ['broken', 'maintenance'], true) && $status === 'active') {
+            $this->setMessage('Lỗi: Phải hoàn thành phiếu bảo trì mới được chuyển sang trạng thái Hoạt động.', 'error');
             $this->redirect('devices');
         }
 
@@ -213,26 +210,11 @@ class DeviceController
         }
 
         try {
-            $this->deviceRepo->updateDevice(
-                $id,
-                $deviceCode,
-                $deviceName,
-                $typeId,
-                $roomId,
-                $status
-            );
-
-            $this->setMessage(
-                'Cập nhật thiết bị thành công!',
-                'success'
-            );
+            $this->deviceRepo->updateDevice($id, $deviceCode, $deviceName, $typeId, $roomId, $status);
+            $this->setMessage('Cập nhật thiết bị thành công!', 'success');
         } catch (PDOException $e) {
-            $this->setMessage(
-                'Không thể cập nhật thiết bị. Mã thiết bị có thể đã tồn tại.',
-                'error'
-            );
+            $this->setMessage('Không thể cập nhật. Mã thiết bị có thể đã tồn tại.', 'error');
         }
-
         $this->redirect('devices');
     }
 
@@ -271,80 +253,38 @@ class DeviceController
         $id = (int)($_POST['id'] ?? 0);
         $status = $_POST['status'] ?? '';
 
-        if (
-            $id <= 0 ||
-            !in_array($status, ['approved', 'rejected'], true)
-        ) {
-            $this->setMessage(
-                'Yêu cầu phòng không hợp lệ.',
-                'error'
-            );
-
+        if ($id <= 0 || !in_array($status, ['approved', 'rejected'], true)) {
+            $this->setMessage('Yêu cầu phòng không hợp lệ.', 'error');
             $this->redirect('staff_bookings');
         }
 
         $booking = $this->deviceRepo->getBookingById($id);
-
-        if (!$booking) {
-            $this->setMessage(
-                'Không tìm thấy yêu cầu đặt phòng.',
-                'error'
-            );
-
-            $this->redirect('staff_bookings');
-        }
-
-        if ($booking['status'] !== 'pending') {
-            $this->setMessage(
-                'Yêu cầu này đã được xử lý.',
-                'error'
-            );
-
+        if (!$booking || $booking['status'] !== 'pending') {
+            $this->setMessage('Không tìm thấy yêu cầu hoặc yêu cầu đã được xử lý.', 'error');
             $this->redirect('staff_bookings');
         }
 
         if ($status === 'approved') {
-            $conflict = $this->deviceRepo->checkBookingConflict(
-                (int)$booking['room_id'],
-                $booking['start_time'],
-                $booking['end_time'],
-                (int)$booking['id']
-            );
-
+            $conflict = $this->deviceRepo->checkBookingConflict((int)$booking['room_id'], $booking['start_time'], $booking['end_time'], (int)$booking['id']);
             if ($conflict) {
-                $this->setMessage(
-                    'Không thể duyệt. Phòng đã có lịch được duyệt trong khoảng thời gian này.',
-                    'error'
-                );
-
+                $this->setMessage('Không thể duyệt. Phòng đã có lịch được duyệt trong khoảng thời gian này.', 'error');
                 $this->redirect('staff_bookings');
             }
         }
 
         try {
-            $this->deviceRepo->updateBookingStatus(
-                $id,
-                $status
-            );
+            $this->deviceRepo->updateBookingStatus($id, $status);
 
             if ($status === 'approved') {
-                $this->setMessage(
-                    'Đã đồng ý yêu cầu đặt phòng!',
-                    'success'
-                );
+                // VÁ LỖI AUTO-REJECT: Tự động hủy các đơn trùng giờ đang pending
+                $this->deviceRepo->rejectConflictingBookings((int)$booking['room_id'], $booking['start_time'], $booking['end_time'], $id);
+                $this->setMessage('Đã duyệt yêu cầu và tự động từ chối các lịch trùng!', 'success');
             } else {
-                $this->setMessage(
-                    'Đã từ chối yêu cầu đặt phòng!',
-                    'success'
-                );
+                $this->setMessage('Đã từ chối yêu cầu đặt phòng!', 'success');
             }
         } catch (PDOException $e) {
-            $this->setMessage(
-                'Không thể cập nhật yêu cầu đặt phòng.',
-                'error'
-            );
+            $this->setMessage('Lỗi hệ thống khi cập nhật đặt phòng.', 'error');
         }
-
         $this->redirect('staff_bookings');
     }
 

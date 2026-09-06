@@ -193,18 +193,15 @@ class DeviceController
         $roomId = (int)($_POST['room_id'] ?? 0);
         $status = $_POST['status'] ?? 'active';
 
-        if (
-            $id <= 0 ||
-            $deviceCode === '' ||
-            $deviceName === '' ||
-            $typeId <= 0 ||
-            $roomId <= 0
-        ) {
-            $this->setMessage(
-                'ThÃ´ng tin thiáº¿t bá»‹ khÃ´ng há»£p lá»‡.',
-                'error'
-            );
+        if ($id <= 0 || $deviceCode === '' || $deviceName === '' || $typeId <= 0 || $roomId <= 0) {
+            $this->setMessage('ThÃ´ng tin thiáº¿t bá»‹ khÃ´ng há»£p lá»‡.', 'error');
+            $this->redirect('devices');
+        }
 
+        // VÃ Lá»–I BYPASS Báº¢O TRÃŒ: Cháº·n viá»‡c tá»± Ã½ Ä‘á»•i tráº¡ng thÃ¡i tá»« Há»ng -> Hoáº¡t Ä‘á»™ng qua form sá»­a
+        $currentDevice = $this->deviceRepo->getDeviceById($id);
+        if ($currentDevice && in_array($currentDevice['status'], ['broken', 'maintenance'], true) && $status === 'active') {
+            $this->setMessage('Lá»—i: Pháº£i hoÃ n thÃ nh phiáº¿u báº£o trÃ¬ má»›i Ä‘Æ°á»£c chuyá»ƒn sang tráº¡ng thÃ¡i Hoáº¡t Ä‘á»™ng.', 'error');
             $this->redirect('devices');
         }
 
@@ -213,26 +210,11 @@ class DeviceController
         }
 
         try {
-            $this->deviceRepo->updateDevice(
-                $id,
-                $deviceCode,
-                $deviceName,
-                $typeId,
-                $roomId,
-                $status
-            );
-
-            $this->setMessage(
-                'Cáº­p nháº­t thiáº¿t bá»‹ thÃ nh cÃ´ng!',
-                'success'
-            );
+            $this->deviceRepo->updateDevice($id, $deviceCode, $deviceName, $typeId, $roomId, $status);
+            $this->setMessage('Cáº­p nháº­t thiáº¿t bá»‹ thÃ nh cÃ´ng!', 'success');
         } catch (PDOException $e) {
-            $this->setMessage(
-                'KhÃ´ng thá»ƒ cáº­p nháº­t thiáº¿t bá»‹. MÃ£ thiáº¿t bá»‹ cÃ³ thá»ƒ Ä‘Ã£ tá»“n táº¡i.',
-                'error'
-            );
+            $this->setMessage('KhÃ´ng thá»ƒ cáº­p nháº­t. MÃ£ thiáº¿t bá»‹ cÃ³ thá»ƒ Ä‘Ã£ tá»“n táº¡i.', 'error');
         }
-
         $this->redirect('devices');
     }
 
@@ -271,80 +253,38 @@ class DeviceController
         $id = (int)($_POST['id'] ?? 0);
         $status = $_POST['status'] ?? '';
 
-        if (
-            $id <= 0 ||
-            !in_array($status, ['approved', 'rejected'], true)
-        ) {
-            $this->setMessage(
-                'YÃªu cáº§u phÃ²ng khÃ´ng há»£p lá»‡.',
-                'error'
-            );
-
+        if ($id <= 0 || !in_array($status, ['approved', 'rejected'], true)) {
+            $this->setMessage('YÃªu cáº§u phÃ²ng khÃ´ng há»£p lá»‡.', 'error');
             $this->redirect('staff_bookings');
         }
 
         $booking = $this->deviceRepo->getBookingById($id);
-
-        if (!$booking) {
-            $this->setMessage(
-                'KhÃ´ng tÃ¬m tháº¥y yÃªu cáº§u Ä‘áº·t phÃ²ng.',
-                'error'
-            );
-
-            $this->redirect('staff_bookings');
-        }
-
-        if ($booking['status'] !== 'pending') {
-            $this->setMessage(
-                'YÃªu cáº§u nÃ y Ä‘Ã£ Ä‘Æ°á»£c xá»­ lÃ½.',
-                'error'
-            );
-
+        if (!$booking || $booking['status'] !== 'pending') {
+            $this->setMessage('KhÃ´ng tÃ¬m tháº¥y yÃªu cáº§u hoáº·c yÃªu cáº§u Ä‘Ã£ Ä‘Æ°á»£c xá»­ lÃ½.', 'error');
             $this->redirect('staff_bookings');
         }
 
         if ($status === 'approved') {
-            $conflict = $this->deviceRepo->checkBookingConflict(
-                (int)$booking['room_id'],
-                $booking['start_time'],
-                $booking['end_time'],
-                (int)$booking['id']
-            );
-
+            $conflict = $this->deviceRepo->checkBookingConflict((int)$booking['room_id'], $booking['start_time'], $booking['end_time'], (int)$booking['id']);
             if ($conflict) {
-                $this->setMessage(
-                    'KhÃ´ng thá»ƒ duyá»‡t. PhÃ²ng Ä‘Ã£ cÃ³ lá»‹ch Ä‘Æ°á»£c duyá»‡t trong khoáº£ng thá»i gian nÃ y.',
-                    'error'
-                );
-
+                $this->setMessage('KhÃ´ng thá»ƒ duyá»‡t. PhÃ²ng Ä‘Ã£ cÃ³ lá»‹ch Ä‘Æ°á»£c duyá»‡t trong khoáº£ng thá»i gian nÃ y.', 'error');
                 $this->redirect('staff_bookings');
             }
         }
 
         try {
-            $this->deviceRepo->updateBookingStatus(
-                $id,
-                $status
-            );
+            $this->deviceRepo->updateBookingStatus($id, $status);
 
             if ($status === 'approved') {
-                $this->setMessage(
-                    'ÄÃ£ Ä‘á»“ng Ã½ yÃªu cáº§u Ä‘áº·t phÃ²ng!',
-                    'success'
-                );
+                // VÃ Lá»–I AUTO-REJECT: Tá»± Ä‘á»™ng há»§y cÃ¡c Ä‘Æ¡n trÃ¹ng giá» Ä‘ang pending
+                $this->deviceRepo->rejectConflictingBookings((int)$booking['room_id'], $booking['start_time'], $booking['end_time'], $id);
+                $this->setMessage('ÄÃ£ duyá»‡t yÃªu cáº§u vÃ  tá»± Ä‘á»™ng tá»« chá»‘i cÃ¡c lá»‹ch trÃ¹ng!', 'success');
             } else {
-                $this->setMessage(
-                    'ÄÃ£ tá»« chá»‘i yÃªu cáº§u Ä‘áº·t phÃ²ng!',
-                    'success'
-                );
+                $this->setMessage('ÄÃ£ tá»« chá»‘i yÃªu cáº§u Ä‘áº·t phÃ²ng!', 'success');
             }
         } catch (PDOException $e) {
-            $this->setMessage(
-                'KhÃ´ng thá»ƒ cáº­p nháº­t yÃªu cáº§u Ä‘áº·t phÃ²ng.',
-                'error'
-            );
+            $this->setMessage('Lá»—i há»‡ thá»‘ng khi cáº­p nháº­t Ä‘áº·t phÃ²ng.', 'error');
         }
-
         $this->redirect('staff_bookings');
     }
 
@@ -530,11 +470,6 @@ class RoomBookingController
         $errors = [];
         $success = '';
 
-        /*
-         * =========================
-         * Láº¤Y USER
-         * =========================
-         */
         $user = $this->roomRepo->findUser($userId);
 
         if (!$user) {
@@ -545,374 +480,140 @@ class RoomBookingController
             exit;
         }
 
-        /*
-         * =========================
-         * Xá»¬ LÃ POST
-         * =========================
-         */
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
             $action = $_POST['action'] ?? '';
 
-            /*
-             * TV3 - Äáº¶T PHÃ’NG
-             */
-            if (
-                $action === 'booking'
-                || $action === 'create_booking'
-            ) {
+            if ($action === 'booking' || $action === 'create_booking') {
                 $page = 'booking';
-
-                [$errors, $success]
-                    = $this->handleBooking($userId);
-            }
-
-            /*
-             * TV3 - Há»¦Y BOOKING
-             */
-            elseif ($action === 'cancel_booking') {
-
+                [$errors, $success] = $this->handleBooking($userId);
+            } elseif ($action === 'cancel_booking') {
                 $page = 'mybookings';
-
-                [$errors, $success]
-                    = $this->handleCancelBooking($userId);
-            }
-
-            /*
-             * TV2 - BÃO Há»ŽNG THIáº¾T Bá»Š
-             */
-            elseif ($action === 'report') {
-
+                [$errors, $success] = $this->handleCancelBooking($userId);
+            } elseif ($action === 'report') {
                 $page = 'report';
-
-                [$errors, $success]
-                    = $this->handleReport($userId);
+                [$errors, $success] = $this->handleReport($userId);
             }
         }
 
-        /*
-         * =========================
-         * Láº¤Y DATA CHO VIEW
-         * =========================
-         */
-
-        // TV2
         $rooms = $this->roomRepo->findAllRooms();
-
-        // TV2
-        $devices = $this->roomRepo->findAllDevices();
-
-        // TV3
+        $devices = $this->roomRepo->findReportableDevices($userId);
         $myBookings = $this->roomRepo->findBookingsByUser($userId);
-
-        // TV2
         $myReports = $this->roomRepo->findReportsByUser($userId);
 
-        /*
-         * =========================
-         * VIEW
-         * =========================
-         */
-
-        require_once __DIR__
-            . '/../View/student/roombooking.php';
+        require_once __DIR__ . '/../View/student/roombooking.php';
     }
 
-
-    /*
-     * =====================================================
-     * TV3 - Xá»¬ LÃ Äáº¶T PHÃ’NG
-     * =====================================================
-     */
     private function handleBooking(int $userId): array
     {
         $errors = [];
         $success = '';
 
-        $roomId = trim(
-            (string) ($_POST['room_id'] ?? '')
-        );
-
-        $date = trim(
-            (string) ($_POST['date'] ?? '')
-        );
-
-        $start = trim(
-            (string) ($_POST['start'] ?? '')
-        );
-
-        $end = trim(
-            (string) ($_POST['end'] ?? '')
-        );
-
-        $purpose = trim(
-            (string) ($_POST['purpose'] ?? '')
-        );
-
-
-        /*
-         * VALIDATE
-         */
+        $roomId = trim((string) ($_POST['room_id'] ?? ''));
+        $date = trim((string) ($_POST['date'] ?? ''));
+        $start = trim((string) ($_POST['start'] ?? ''));
+        $end = trim((string) ($_POST['end'] ?? ''));
+        $purpose = trim((string) ($_POST['purpose'] ?? ''));
 
         if ($roomId === '') {
-            $errors['room_id']
-                = 'Vui lÃ²ng chá»n phÃ²ng.';
+            $errors['room_id'] = 'Vui lÃ²ng chá»n phÃ²ng.';
         }
-
         if ($date === '') {
-            $errors['date']
-                = 'Vui lÃ²ng chá»n ngÃ y.';
+            $errors['date'] = 'Vui lÃ²ng chá»n ngÃ y.';
         }
-
         if ($start === '') {
-            $errors['start']
-                = 'Vui lÃ²ng chá»n giá» báº¯t Ä‘áº§u.';
+            $errors['start'] = 'Vui lÃ²ng chá»n giá» báº¯t Ä‘áº§u.';
         }
-
         if ($end === '') {
-            $errors['end']
-                = 'Vui lÃ²ng chá»n giá» káº¿t thÃºc.';
+            $errors['end'] = 'Vui lÃ²ng chá»n giá» káº¿t thÃºc.';
         }
-
-        if (
-            $start !== ''
-            && $end !== ''
-            && $end <= $start
-        ) {
-            $errors['end']
-                = 'Giá» káº¿t thÃºc pháº£i lá»›n hÆ¡n giá» báº¯t Ä‘áº§u.';
+        if ($start !== '' && $end !== '' && $end <= $start) {
+            $errors['end'] = 'Giá» káº¿t thÃºc pháº£i lá»›n hÆ¡n giá» báº¯t Ä‘áº§u.';
         }
-
         if ($purpose === '') {
-            $errors['purpose']
-                = 'Vui lÃ²ng nháº­p má»¥c Ä‘Ã­ch.';
+            $errors['purpose'] = 'Vui lÃ²ng nháº­p má»¥c Ä‘Ã­ch.';
         }
-
 
         if (!empty($errors)) {
             return [$errors, $success];
         }
 
-
-        /*
-         * KIá»‚M TRA PHÃ’NG
-         */
-
-        $room = $this->roomRepo->findBookableRoom(
-            (int) $roomId
-        );
+        $room = $this->roomRepo->findBookableRoom((int) $roomId);
 
         if (!$room) {
-
-            $errors['room_id']
-                = 'PhÃ²ng khÃ´ng tá»“n táº¡i hoáº·c Ä‘ang báº£o trÃ¬.';
-
+            $errors['room_id'] = 'PhÃ²ng khÃ´ng tá»“n táº¡i hoáº·c Ä‘ang báº£o trÃ¬.';
             return [$errors, $success];
         }
 
+        $startTime = $date . ' ' . $start . ':00';
+        $endTime = $date . ' ' . $end . ':00';
 
-        /*
-         * Táº O DATETIME
-         */
-
-        $startTime =
-            $date . ' ' . $start . ':00';
-
-        $endTime =
-            $date . ' ' . $end . ':00';
-
-
-        /*
-         * KIá»‚M TRA TRÃ™NG Lá»ŠCH
-         *
-         * TV3
-         */
-
-        if (
-            $this->roomRepo->hasBookingConflict(
-                (int) $roomId,
-                $startTime,
-                $endTime
-            )
-        ) {
-
-            $errors['room_id']
-                = 'PhÃ²ng Ä‘Ã£ Ä‘Æ°á»£c Ä‘áº·t trong thá»i gian nÃ y.';
-
+        if ($this->roomRepo->hasBookingConflict((int) $roomId, $startTime, $endTime)) {
+            $errors['room_id'] = 'PhÃ²ng Ä‘Ã£ Ä‘Æ°á»£c Ä‘áº·t trong thá»i gian nÃ y.';
             return [$errors, $success];
         }
 
-
-        /*
-         * INSERT BOOKING
-         */
-
-        $this->roomRepo->createBooking(
-            $userId,
-            (int) $roomId,
-            $startTime,
-            $endTime,
-            $purpose
-        );
-
+        $this->roomRepo->createBooking($userId, (int) $roomId, $startTime, $endTime, $purpose);
         $success = 'Äáº·t phÃ²ng thÃ nh cÃ´ng.';
 
         return [$errors, $success];
     }
 
-
-    /*
-     * =====================================================
-     * TV3 - Há»¦Y BOOKING
-     * =====================================================
-     */
-    private function handleCancelBooking(
-        int $userId
-    ): array {
-
+    private function handleCancelBooking(int $userId): array
+    {
         $errors = [];
         $success = '';
-
-        $bookingId =
-            (int) ($_POST['booking_id'] ?? 0);
-
+        $bookingId = (int) ($_POST['booking_id'] ?? 0);
 
         if ($bookingId <= 0) {
-
-            $errors['cancel']
-                = 'YÃªu cáº§u Ä‘áº·t phÃ²ng khÃ´ng há»£p lá»‡.';
-
+            $errors['cancel'] = 'YÃªu cáº§u Ä‘áº·t phÃ²ng khÃ´ng há»£p lá»‡.';
             return [$errors, $success];
         }
 
-
-        /*
-         * CHá»ˆ ÄÆ¯á»¢C Há»¦Y BOOKING Cá»¦A CHÃNH MÃŒNH
-         */
-
-        $booking =
-            $this->roomRepo->findBookingForUser(
-                $bookingId,
-                $userId
-            );
-
+        $booking = $this->roomRepo->findBookingForUser($bookingId, $userId);
 
         if (!$booking) {
-
-            $errors['cancel']
-                = 'KhÃ´ng tÃ¬m tháº¥y yÃªu cáº§u Ä‘áº·t phÃ²ng cá»§a báº¡n.';
-
+            $errors['cancel'] = 'KhÃ´ng tÃ¬m tháº¥y yÃªu cáº§u Ä‘áº·t phÃ²ng cá»§a báº¡n.';
             return [$errors, $success];
         }
 
-
-        /*
-         * KIá»‚M TRA CÃ“ THá»‚ Há»¦Y KHÃ”NG
-         */
-
-        $canCancel =
-            $booking['status'] !== 'cancelled'
-            &&
-            (
-                $booking['status'] === 'pending'
-                ||
-                $booking['start_time']
-                    > date('Y-m-d H:i:s')
-            );
-
+        $canCancel = $booking['status'] !== 'cancelled' && ($booking['status'] === 'pending' || $booking['start_time'] > date('Y-m-d H:i:s'));
 
         if (!$canCancel) {
-
-            $errors['cancel']
-                = 'KhÃ´ng thá»ƒ há»§y yÃªu cáº§u nÃ y.';
-
+            $errors['cancel'] = 'KhÃ´ng thá»ƒ há»§y yÃªu cáº§u nÃ y.';
             return [$errors, $success];
         }
 
-
-        $this->roomRepo->cancelBooking(
-            $bookingId,
-            $userId
-        );
-
-        $success =
-            'Há»§y yÃªu cáº§u Ä‘áº·t phÃ²ng thÃ nh cÃ´ng.';
+        $this->roomRepo->cancelBooking($bookingId, $userId);
+        $success = 'Há»§y yÃªu cáº§u Ä‘áº·t phÃ²ng thÃ nh cÃ´ng.';
 
         return [$errors, $success];
     }
 
-
-    /*
-     * =====================================================
-     * TV2 - BÃO Há»ŽNG THIáº¾T Bá»Š
-     * =====================================================
-     */
-    private function handleReport(
-        int $userId
-    ): array {
-
+    private function handleReport(int $userId): array
+    {
         $errors = [];
         $success = '';
-
-        $deviceId =
-            trim(
-                (string) ($_POST['device_id'] ?? '')
-            );
-
-        $description =
-            trim(
-                (string) ($_POST['description'] ?? '')
-            );
-
+        $deviceId = trim((string) ($_POST['device_id'] ?? ''));
+        $description = trim((string) ($_POST['description'] ?? ''));
 
         if ($deviceId === '') {
-
-            $errors['device_id']
-                = 'Vui lÃ²ng chá»n thiáº¿t bá»‹.';
+            $errors['device_id'] = 'Vui lÃ²ng chá»n thiáº¿t bá»‹.';
         }
-
-
         if ($description === '') {
-
-            $errors['description']
-                = 'Vui lÃ²ng nháº­p ná»™i dung bÃ¡o há»ng.';
+            $errors['description'] = 'Vui lÃ²ng nháº­p ná»™i dung bÃ¡o há»ng.';
         }
-
 
         if (!empty($errors)) {
             return [$errors, $success];
         }
 
-
-        /*
-         * KIá»‚M TRA THIáº¾T Bá»Š
-         */
-
-        if (
-            !$this->roomRepo->deviceExists(
-                (int) $deviceId
-            )
-        ) {
-
-            $errors['device_id']
-                = 'Thiáº¿t bá»‹ khÃ´ng tá»“n táº¡i.';
-
+        if (!$this->roomRepo->deviceExists((int) $deviceId)) {
+            $errors['device_id'] = 'Thiáº¿t bá»‹ khÃ´ng tá»“n táº¡i.';
             return [$errors, $success];
         }
 
-
-        /*
-         * INSERT REPORT
-         */
-
-        $this->roomRepo->createDeviceReport(
-            (int) $deviceId,
-            $userId,
-            $description
-        );
-
-        $success =
-            'BÃ¡o há»ng thiáº¿t bá»‹ thÃ nh cÃ´ng.';
+        $this->roomRepo->createDeviceReport((int) $deviceId, $userId, $description);
+        $success = 'BÃ¡o há»ng thiáº¿t bá»‹ thÃ nh cÃ´ng.';
 
         return [$errors, $success];
     }
@@ -934,14 +635,14 @@ class UserController {
         // Xá»­ lÃ½ duyá»‡t sinh viÃªn
         if (isset($_GET['action']) && $_GET['action'] == 'approve' && isset($_GET['id'])) {
             $this->userRepo->approveStudent((int)$_GET['id']);
-            header("Location: index.php?route=users&tab=students&msg=approved");
+            header("Location: /quan-ly-phong-thuc-hanh/public/index.php?route=users&tab=students&msg=approved");
             exit;
         }
 
         // Xá»­ lÃ½ xÃ³a tÃ i khoáº£n
         if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
             $this->userRepo->deleteUser((int)$_GET['id']);
-            header("Location: index.php?route=users&tab=" . $tab . "&msg=deleted");
+            header("Location: /quan-ly-phong-thuc-hanh/public/index.php?route=users&tab=" . $tab . "&msg=deleted");
             exit;
         }
 
@@ -1197,12 +898,24 @@ class DeviceRepository
         ]);
     }
 
-    public function checkBookingConflict(
-        int $roomId,
-        string $startTime,
-        string $endTime,
-        ?int $excludeId = null
-    ): bool {
+    public function rejectConflictingBookings(int $roomId, string $startTime, string $endTime, int $approvedId): void
+    {
+        $sql = "UPDATE bookings 
+                SET status = 'rejected' 
+                WHERE room_id = :room_id 
+                AND id != :approved_id 
+                AND status = 'pending' 
+                AND start_time < :end_time 
+                AND end_time > :start_time";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            ':room_id' => $roomId,
+            ':approved_id' => $approvedId,
+            ':start_time' => $startTime,
+            ':end_time' => $endTime
+        ]);
+    
         $sql = "SELECT COUNT(*)
                 FROM bookings
                 WHERE room_id = :room_id
@@ -1389,12 +1102,19 @@ class MaintenanceRepository
                 $staffId,
                 $description
             ]);
+$stmt = $this->pdo->prepare("UPDATE devices SET status = ? WHERE id = ?");
+            $stmt->execute([$deviceStatus, $deviceId]);
+
+            // VÃ Lá»–I ORPHANED DATA: Äá»“ng bá»™ tráº¡ng thÃ¡i hoÃ n thÃ nh vá» láº¡i cho sinh viÃªn
+            if ($deviceStatus === 'active') {
+                $stmtSync = $this->pdo->prepare("UPDATE device_reports SET status = 'resolved' WHERE device_id = ? AND status = 'reported'");
+                $stmtSync->execute([$deviceId]);
+            }
 
             $this->pdo->commit();
 
-            return $maintenanceId;
-
         } catch (Exception $e) {
+            
 
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
@@ -1658,38 +1378,33 @@ class RoomBookingRepository
      *
      */
 
-    public function hasBookingConflict(
-        int $roomId,
-        string $startTime,
-        string $endTime
-    ): bool {
-
+    public function hasBookingConflict(int $roomId, string $startTime, string $endTime): bool 
+    {
+        // VÃ Lá»–I DEADLOCK: Chá»‰ cháº·n khi phÃ²ng Ä‘Ã£ cÃ³ ngÆ°á»i Ä‘Æ°á»£c DUYá»†T (approved)
         $stmt = $this->pdo->prepare(
-            "
-            SELECT id
-            FROM bookings
-            WHERE room_id = ?
-
-            AND status IN (
-                'pending',
-                'approved'
-            )
-
-            AND start_time < ?
-            AND end_time > ?
-
-            LIMIT 1
-            "
+            "SELECT id FROM bookings 
+             WHERE room_id = ? 
+             AND status = 'approved' 
+             AND start_time < ? 
+             AND end_time > ? 
+             LIMIT 1"
         );
+        $stmt->execute([$roomId, $endTime, $startTime]);
+        return (bool)$stmt->fetch(PDO::FETCH_ASSOC);
+    }
 
-        $stmt->execute([
-            $roomId,
-            $endTime,
-            $startTime
-        ]);
-
-        return (bool)
-            $stmt->fetch(PDO::FETCH_ASSOC);
+    // VÃ Lá»–I NGHIá»†P Vá»¤: Chá»‰ cho phÃ©p sinh viÃªn bÃ¡o há»ng thiáº¿t bá»‹ á»Ÿ cÃ¡c phÃ²ng há» Ä‘Ã£ Ä‘Æ°á»£c duyá»‡t mÆ°á»£n
+    public function findReportableDevices(int $userId): array 
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT DISTINCT d.id, d.device_code, d.device_name, d.room_id, d.status
+             FROM devices d
+             INNER JOIN bookings b ON d.room_id = b.room_id
+             WHERE b.user_id = ? AND b.status = 'approved'
+             ORDER BY d.device_code"
+        );
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
 
@@ -2078,7 +1793,7 @@ class UserRepository {
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link <?php echo (($tab ?? '') == 'students') ? 'active' : ''; ?>" href="index.php?route=users&tab=students">
+                <a class="nav-link <?php echo (($tab ?? '') == 'students') ? 'active' : ''; ?>" href="../../public/index.php?route=users&tab=students">
                     Duyá»‡t tÃ i khoáº£n Sinh viÃªn
                 </a>
             </li>
@@ -2204,9 +1919,9 @@ class UserRepository {
                                     </td>
                                     <td class="text-center">
                                         <?php if (($student['status'] ?? '') == 'pending'): ?>
-                                            <a href="index.php?route=users&tab=students&action=approve&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-success me-1">Duyá»‡t</a>
+                                            <a href="/quan-ly-phong-thuc-hanh/public/index.php?route=users&tab=students&action=approve&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-success me-1">Duyá»‡t</a>
                                         <?php endif; ?>
-                                        <a href="index.php?route=users&tab=students&action=delete&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Báº¡n cÃ³ cháº¯c muá»‘n xÃ³a sinh viÃªn nÃ y?');">XÃ³a</a>
+                                        <a href="/quan-ly-phong-thuc-hanh/public/index.php?route=users&tab=students&action=delete&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Báº¡n cÃ³ cháº¯c muá»‘n xÃ³a sinh viÃªn nÃ y?');">XÃ³a</a>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -2242,12 +1957,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $user = $stmt->fetch(\PDO::FETCH_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
+
             if (isset($user['status']) && $user['status'] == 'pending') {
                 $error = "TÃ i khoáº£n cá»§a báº¡n Ä‘ang chá» Admin phÃª duyá»‡t!";
             } elseif (isset($user['status']) && $user['status'] == 'rejected') {
                 $error = "TÃ i khoáº£n cá»§a báº¡n Ä‘Ã£ bá»‹ tá»« chá»‘i truy cáº­p!";
             } else {
-     
+
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
                 $_SESSION['full_name'] = $user['full_name'];
@@ -2256,52 +1972,106 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 if ($user['role'] == 'admin') {
                     header("Location: index.php?route=users");
                     exit();
+
                 } elseif ($user['role'] == 'staff') {
-                    header("Location: index.php?route=maintenance");
+                    header("Location: index.php?route=devices");
                     exit();
+
                 } else {
                     header("Location: index.php?route=bookings");
                     exit();
                 }
             }
+
         } else {
             $error = "TÃªn Ä‘Äƒng nháº­p hoáº·c máº­t kháº©u khÃ´ng chÃ­nh xÃ¡c!";
         }
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <title>ÄÄƒng nháº­p há»‡ thá»‘ng</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <style>
-        body { background-color: #f4f7f9; font-family: 'Segoe UI', sans-serif; }
-        .card-custom { border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        body {
+            background-color: #f4f7f9;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .card-custom {
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
     </style>
 </head>
+
 <body class="d-flex align-items-center justify-content-center vh-100">
+
     <div class="card card-custom p-4 bg-white" style="width: 400px;">
-        <h3 class="text-center mb-3 text-primary">ÄÄƒng Nháº­p Há»‡ Thá»‘ng</h3>
+
+        <h3 class="text-center mb-3 text-primary">
+            ÄÄƒng Nháº­p Há»‡ Thá»‘ng
+        </h3>
+
         <?php if (!empty($error)): ?>
-            <div class="alert alert-danger py-2"><?php echo $error; ?></div>
+            <div class="alert alert-danger py-2">
+                <?php echo $error; ?>
+            </div>
         <?php endif; ?>
+
         <form method="POST">
+
             <div class="mb-3">
-                <label class="form-label">TÃªn Ä‘Äƒng nháº­p</label>
-                <input type="text" name="username" class="form-control" placeholder="Nháº­p username..." required>
+                <label class="form-label">
+                    TÃªn Ä‘Äƒng nháº­p
+                </label>
+
+                <input
+                    type="text"
+                    name="username"
+                    class="form-control"
+                    placeholder="Nháº­p username..."
+                    required
+                >
             </div>
+
             <div class="mb-3">
-                <label class="form-label">Máº­t kháº©u</label>
-                <input type="password" name="password" class="form-control" placeholder="Nháº­p máº­t kháº©u..." required>
+                <label class="form-label">
+                    Máº­t kháº©u
+                </label>
+
+                <input
+                    type="password"
+                    name="password"
+                    class="form-control"
+                    placeholder="Nháº­p máº­t kháº©u..."
+                    required
+                >
             </div>
-            <button type="submit" class="btn btn-primary w-100">ÄÄƒng Nháº­p</button>
+
+            <button type="submit" class="btn btn-primary w-100">
+                ÄÄƒng Nháº­p
+            </button>
+
         </form>
+
         <div class="text-center mt-3">
-            <small>ChÆ°a cÃ³ tÃ i khoáº£n sinh viÃªn? <a href="index.php?route=register">ÄÄƒng kÃ½ ngay</a></small>
+            <small>
+                ChÆ°a cÃ³ tÃ i khoáº£n sinh viÃªn?
+                <a href="index.php?route=register">
+                    ÄÄƒng kÃ½ ngay
+                </a>
+            </small>
         </div>
+
     </div>
+
 </body>
 </html>
 <?php
@@ -2372,6 +2142,412 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
         <?php endif; ?>
     </div>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quáº£n lÃ½ báº£o trÃ¬ thiáº¿t bá»‹</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        :root {
+            --hnmu-blue: #003399;
+        }
+
+        .sidebar {
+            inline-size: 260px;
+            block-size: 100vh;
+            background-color: #ffffff;
+            border-inline-end: 1px solid #dee2e6;
+            position: fixed;
+            inset-block-start: 0;
+            inset-inline-start: 0;
+            padding-block-start: 20px;
+        }
+
+        .sidebar .brand {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--hnmu-blue);
+            padding: 0 20px 20px 20px;
+            border-block-end: 1px solid #dee2e6;
+            letter-spacing: 0.5px;
+        }
+
+        .main-content {
+            margin-inline-start: 260px;
+            padding: 30px;
+        }
+
+        .card-custom {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        }
+
+        .btn-primary-custom {
+            background-color: var(--hnmu-blue);
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <div class="brand">LAB MANAGEMENT</div>
+
+        <ul class="nav flex-column mt-3">
+            <li class="nav-item">
+                <a class="nav-link text-dark active fw-bold"
+                   href="index.php?page=maintenance">
+                    Quáº£n lÃ½ Báº£o trÃ¬
+                </a>
+            </li>
+
+            <li class="nav-item mt-4">
+                <a class="nav-link text-danger"
+                   href="index.php?page=logout">
+                    ÄÄƒng xuáº¥t
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+
+        <h3 class="text-primary fw-bold mb-1">
+            PHÃ’NG Báº¢O TRÃŒ THIáº¾T Bá»Š
+        </h3>
+
+        <p class="text-muted mb-4">
+            Quáº£n lÃ½ báº£o trÃ¬ vÃ  cáº­p nháº­t tráº¡ng thÃ¡i thiáº¿t bá»‹
+        </p>
+
+        <?php if (!empty($thongbao)): ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <?= htmlspecialchars($thongbao) ?>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert">
+                </button>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($loi)): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <?= htmlspecialchars($loi) ?>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="alert">
+                </button>
+            </div>
+        <?php endif; ?>
+
+        <div class="row mb-4">
+
+            <div class="col-md-3">
+                <div class="card card-custom p-3 text-center">
+                    <h6 class="text-muted">Tá»•ng thiáº¿t bá»‹</h6>
+                    <h3 class="fw-bold text-dark">
+                        <?= $stats['tong'] ?>
+                    </h3>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card card-custom p-3 text-center">
+                    <h6 class="text-muted">Hoáº¡t Ä‘á»™ng</h6>
+                    <h3 class="fw-bold text-success">
+                        <?= $stats['hoatdong'] ?>
+                    </h3>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card card-custom p-3 text-center">
+                    <h6 class="text-muted">Há»ng</h6>
+                    <h3 class="fw-bold text-danger">
+                        <?= $stats['hong'] ?>
+                    </h3>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card card-custom p-3 text-center">
+                    <h6 class="text-muted">Äang báº£o trÃ¬</h6>
+                    <h3 class="fw-bold text-warning">
+                        <?= $stats['baotri'] ?>
+                    </h3>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="card card-custom p-4">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th>STT</th>
+                            <th>MÃ£ TB</th>
+                            <th>Thiáº¿t bá»‹</th>
+                            <th>Tráº¡ng thÃ¡i</th>
+                            <th>ThÃ´ng tin báº£o trÃ¬</th>
+                            <th class="text-center">Thao tÃ¡c</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        <?php if (!empty($thietbi)): ?>
+
+                            <?php foreach ($thietbi as $i => $tb):
+
+                                $status = trim((string)($tb["device_status"] ?? ''));
+
+                                $isBroken = in_array(
+                                    $status,
+                                    ["Há»ng", "broken"],
+                                    true
+                                );
+
+                                $isMaintenance = in_array(
+                                    $status,
+                                    ["Äang báº£o trÃ¬", "maintenance"],
+                                    true
+                                );
+
+                                $badgeClass = $isBroken
+                                    ? "bg-danger"
+                                    : ($isMaintenance
+                                        ? "bg-warning text-dark"
+                                        : "bg-success");
+
+                                $statusText = $isBroken
+                                    ? "Há»ng"
+                                    : ($isMaintenance
+                                        ? "Äang báº£o trÃ¬"
+                                        : "Hoáº¡t Ä‘á»™ng");
+
+                                $mId = (int)($tb["maintenance_id"] ?? 0);
+                            ?>
+
+                                <tr>
+
+                                    <td>
+                                        <?= $i + 1 ?>
+                                    </td>
+
+                                    <td>
+                                        <?= htmlspecialchars(
+                                            $tb["device_code"] ?? ""
+                                        ) ?>
+                                    </td>
+
+                                    <td class="fw-bold">
+                                        <?= htmlspecialchars(
+                                            $tb["device_name"] ?? ""
+                                        ) ?>
+                                    </td>
+
+                                    <td>
+                                        <span class="badge <?= $badgeClass ?>">
+                                            <?= $statusText ?>
+                                        </span>
+                                    </td>
+
+                                    <td>
+
+                                        <?php if ($mId > 0): ?>
+
+                                            <strong>
+                                                Phiáº¿u #<?= $mId ?>
+                                            </strong>
+
+                                            <br>
+
+                                            <small class="text-muted">
+                                                Tráº¡ng thÃ¡i:
+                                                <?= htmlspecialchars(
+                                                    $tb["maintenance_status"] ?? ""
+                                                ) ?>
+                                            </small>
+
+                                            <br>
+
+                                            <small>
+                                                NgÃ y:
+                                                <?= htmlspecialchars(
+                                                    $tb["maintenance_date"]
+                                                    ?? $tb["created_at"]
+                                                    ?? ""
+                                                ) ?>
+                                            </small>
+
+                                            <br>
+
+                                            <small>
+                                                Ná»™i dung:
+                                                <?= htmlspecialchars(
+                                                    $tb["description"]
+                                                    ?? $tb["content"]
+                                                    ?? ""
+                                                ) ?>
+                                            </small>
+
+                                            <?php if (!empty($tb["result"])): ?>
+
+                                                <br>
+
+                                                <small class="text-success">
+                                                    KQ:
+                                                    <?= htmlspecialchars(
+                                                        $tb["result"]
+                                                    ) ?>
+                                                </small>
+
+                                            <?php endif; ?>
+
+                                        <?php else: ?>
+
+                                            <small class="text-muted">
+                                                ChÆ°a cÃ³ lá»‹ch sá»­.
+                                            </small>
+
+                                        <?php endif; ?>
+
+                                    </td>
+
+                                    <td class="text-center">
+
+                                        <?php if ($isBroken): ?>
+
+                                            <form method="POST" class="d-inline">
+
+                                                <input
+                                                    type="hidden"
+                                                    name="device_id"
+                                                    value="<?= (int)$tb["device_id"] ?>"
+                                                >
+
+                                                <input
+                                                    type="text"
+                                                    name="description"
+                                                    class="form-control form-control-sm mb-1"
+                                                    placeholder="Ná»™i dung báº£o trÃ¬..."
+                                                    required
+                                                >
+
+                                                <button
+                                                    type="submit"
+                                                    name="batdau_baotri"
+                                                    class="btn btn-sm btn-primary-custom w-100"
+                                                >
+                                                    Báº¯t Ä‘áº§u
+                                                </button>
+
+                                            </form>
+
+                                        <?php elseif ($isMaintenance && $mId > 0): ?>
+
+                                            <form method="POST" class="d-inline">
+
+                                                <input
+                                                    type="hidden"
+                                                    name="maintenance_id"
+                                                    value="<?= $mId ?>"
+                                                >
+
+                                                <input
+                                                    type="hidden"
+                                                    name="device_id"
+                                                    value="<?= (int)$tb["device_id"] ?>"
+                                                >
+
+                                                <select
+                                                    name="status"
+                                                    class="form-select form-select-sm mb-1"
+                                                >
+                                                    <option value="Äang báº£o trÃ¬">
+                                                        Äang báº£o trÃ¬
+                                                    </option>
+
+                                                    <option value="HoÃ n thÃ nh">
+                                                        HoÃ n thÃ nh
+                                                    </option>
+                                                </select>
+
+                                                <input
+                                                    type="text"
+                                                    name="result"
+                                                    class="form-control form-control-sm mb-1"
+                                                    placeholder="Káº¿t quáº£..."
+                                                    required
+                                                >
+
+                                                <button
+                                                    type="submit"
+                                                    name="capnhat"
+                                                    class="btn btn-sm btn-warning w-100"
+                                                >
+                                                    Cáº­p nháº­t
+                                                </button>
+
+                                            </form>
+
+                                        <?php else: ?>
+
+                                            <span class="text-muted small">
+                                                KhÃ´ng yÃªu cáº§u
+                                            </span>
+
+                                        <?php endif; ?>
+
+                                    </td>
+
+                                </tr>
+
+                            <?php endforeach; ?>
+
+                        <?php else: ?>
+
+                            <tr>
+                                <td colspan="6"
+                                    class="text-center text-muted">
+                                    ChÆ°a cÃ³ thiáº¿t bá»‹.
+                                </td>
+                            </tr>
+
+                        <?php endif; ?>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>
 <?php
@@ -6604,6 +6780,87 @@ function reportStatusText(
 
 </html>
 <?php
+
+session_start();
+
+require_once __DIR__ . '/../config/database.php';
+
+require_once __DIR__ . '/../src/Repository/UserRepository.php';
+require_once __DIR__ . '/../src/Controller/UserController.php';
+
+require_once __DIR__ . '/../src/Repository/RoomBookingRepository.php';
+require_once __DIR__ . '/../src/Controller/RoomBookingController.php';
+
+use App\Repository\UserRepository;
+use App\Controller\UserController;
+
+use App\Repository\RoomBookingRepository;
+use App\Controller\RoomBookingController;
+
+$page = $_GET['page'] ?? 'users';
+
+switch ($page) {
+
+    case 'users':
+
+        $userRepo = new UserRepository($pdo);
+        $userController = new UserController($userRepo);
+        $userController->index();
+
+        break;
+
+
+    case 'bookings':
+    case 'rooms':
+
+        $bookingRepo = new RoomBookingRepository($pdo);
+        $bookingController = new RoomBookingController($bookingRepo);
+        $bookingController->index();
+
+        break;
+
+
+    case 'devices':
+    case 'staff_bookings':
+    case 'borrowings':
+
+        require_once __DIR__ . '/../src/Repository/DeviceRepository.php';
+        require_once __DIR__ . '/../src/Controller/DeviceController.php';
+
+        $deviceRepo = new \App\Repository\DeviceRepository($pdo);
+        $deviceController = new \App\Controller\DeviceController($deviceRepo);
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $deviceController->handleRequest();
+        } else {
+            $deviceController->index();
+        }
+
+        break;
+
+
+    case 'maintenance':
+
+        require_once __DIR__ . '/../src/Repository/MaintenanceRepository.php';
+        require_once __DIR__ . '/../src/Controller/MaintenanceController.php';
+
+        $maintenanceRepo = new \App\Repository\MaintenanceRepository($pdo);
+        $maintenanceController = new \App\Controller\MaintenanceController($maintenanceRepo);
+
+        $maintenanceController->index();
+
+        break;
+
+
+    default:
+
+        $userRepo = new UserRepository($pdo);
+        $userController = new UserController($userRepo);
+        $userController->index();
+
+        break;
+}
+<?php
 session_start();
 
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -6650,7 +6907,6 @@ switch ($route) {
         $bookingController->index();
         break;
 
-    // LUá»’NG Má»šI Cá»¦A AN: QUáº¢N LÃ THIáº¾T Bá»Š & DUYá»†T Lá»ŠCH
     case 'devices':
     case 'staff_bookings':
     case 'borrowings':
@@ -6664,7 +6920,6 @@ switch ($route) {
         }
         break;
 
-    // LUá»’NG Má»šI Cá»¦A AN: Báº¢O TRÃŒ
     case 'maintenance':
         $maintenanceRepo = new MaintenanceRepository($pdo);
         $maintenanceController = new MaintenanceController($maintenanceRepo);

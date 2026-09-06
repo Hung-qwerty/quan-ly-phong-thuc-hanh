@@ -140,38 +140,33 @@ class RoomBookingRepository
      *
      */
 
-    public function hasBookingConflict(
-        int $roomId,
-        string $startTime,
-        string $endTime
-    ): bool {
-
+    public function hasBookingConflict(int $roomId, string $startTime, string $endTime): bool 
+    {
+        // VÁ LỖI DEADLOCK: Chỉ chặn khi phòng đã có người được DUYỆT (approved)
         $stmt = $this->pdo->prepare(
-            "
-            SELECT id
-            FROM bookings
-            WHERE room_id = ?
-
-            AND status IN (
-                'pending',
-                'approved'
-            )
-
-            AND start_time < ?
-            AND end_time > ?
-
-            LIMIT 1
-            "
+            "SELECT id FROM bookings 
+             WHERE room_id = ? 
+             AND status = 'approved' 
+             AND start_time < ? 
+             AND end_time > ? 
+             LIMIT 1"
         );
+        $stmt->execute([$roomId, $endTime, $startTime]);
+        return (bool)$stmt->fetch(PDO::FETCH_ASSOC);
+    }
 
-        $stmt->execute([
-            $roomId,
-            $endTime,
-            $startTime
-        ]);
-
-        return (bool)
-            $stmt->fetch(PDO::FETCH_ASSOC);
+    // VÁ LỖI NGHIỆP VỤ: Chỉ cho phép sinh viên báo hỏng thiết bị ở các phòng họ đã được duyệt mượn
+    public function findReportableDevices(int $userId): array 
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT DISTINCT d.id, d.device_code, d.device_name, d.room_id, d.status
+             FROM devices d
+             INNER JOIN bookings b ON d.room_id = b.room_id
+             WHERE b.user_id = ? AND b.status = 'approved'
+             ORDER BY d.device_code"
+        );
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
 
