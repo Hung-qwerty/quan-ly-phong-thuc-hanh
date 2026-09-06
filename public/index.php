@@ -50,6 +50,7 @@ switch ($route) {
 
         break;
 
+<<<<<<< HEAD
     case 'devices':
     case 'staff_bookings':
     case 'borrowings':
@@ -68,6 +69,12 @@ switch ($route) {
             $deviceController->index();
         }
 
+=======
+case 'devices':
+        $devMaintRepo = new DeviceMaintenanceRepository($pdo);
+        $devMaintController = new DeviceMaintenanceController($devMaintRepo);
+        $devMaintController->indexDevices();
+>>>>>>> 4b2434d0b68e3300a43fd759dcdea89414c10033
         break;
 
     case 'maintenance':
