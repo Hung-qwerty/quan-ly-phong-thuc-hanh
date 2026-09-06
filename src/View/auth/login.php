@@ -20,6 +20,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             } elseif (isset($user['status']) && $user['status'] == 'rejected') {
                 $error = "Tài khoản của bạn đã bị từ chối truy cập!";
             } else {
+                
+                session_regenerate_id(true);
 
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];

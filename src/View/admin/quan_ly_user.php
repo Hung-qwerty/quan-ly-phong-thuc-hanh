@@ -1,3 +1,9 @@
+<?php
+$offset = $offset ?? 0;
+$totalPages = $totalPages ?? 1;
+$page = $page ?? 1;
+$search = $search ?? '';
+?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -66,6 +72,8 @@
             background-color: #002266;
             color: white;
         }
+        .pagination .page-link { color: var(--hnmu-blue); }
+        .pagination .page-item.active .page-link { background-color: var(--hnmu-blue); border-color: var(--hnmu-blue); color: white; }
     </style>
 </head>
 <body>
@@ -103,10 +111,15 @@
             </div>
         <?php endif; ?>
 
+        <?php if (!empty($errors['general'])): ?>
+            <div class="alert alert-danger"><?php echo $errors['general']; ?></div>
+        <?php endif; ?>
+
         <?php if (!empty($errors['username'])): ?>
             <div class="alert alert-danger"><?php echo $errors['username']; ?></div>
         <?php endif; ?>
 
+        <!-- TAB NỘI BỘ -->
         <?php if (($tab ?? 'internal') == 'internal'): ?>
             <div class="card card-custom p-4 mb-4">
                 <h4 class="text-primary mb-3">Thêm mới tài khoản Nội bộ</h4>
@@ -144,7 +157,7 @@
                         <thead class="table-light">
                             <tr>
                                 <th>STT</th>
-                                <th>Mã sinh viên</th>
+                                <th>Username</th>
                                 <th>Họ tên</th>
                                 <th>Vai trò</th>
                                 <th class="text-center">Thao tác</th>
@@ -174,56 +187,115 @@
             </div>
         <?php endif; ?>
 
+        <!-- TAB SINH VIÊN -->
         <?php if (($tab ?? '') == 'students'): ?>
             <div class="card card-custom p-4">
-                <h4 class="text-primary mb-3">Danh sách & Phê duyệt tài khoản Sinh viên</h4>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-primary">
-                            <tr>
-                                <th>STT</th>
-                                <th>Username</th>
-                                <th>Họ tên</th>
-                                <th>Trạng thái</th>
-                                <th class="text-center">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (!empty($students) && count($students) > 0): ?>
-                                <?php foreach ($students as $index => $student): ?>
-                                <tr>
-                                    <td><?php echo $index + 1; ?></td>
-                                    <td class="fw-bold text-primary"><?php echo htmlspecialchars($student['username']); ?></td>
-                                    <td><?php echo htmlspecialchars($student['full_name']); ?></td>
-                                    <td>
-                                        <?php 
-                                            $status = $student['status'] ?? '';
-                                            if ($status == 'pending') echo '<span class="badge bg-warning text-dark">Chờ duyệt</span>';
-                                            elseif ($status == 'active') echo '<span class="badge bg-success">Đã kích hoạt</span>';
-                                            else echo '<span class="badge bg-danger">Từ chối</span>';
-                                        ?>
-                                    </td>
-                                    <td class="text-center">
-                                        <?php if (($student['status'] ?? '') == 'pending'): ?>
-                                            <a href="index.php?route=users&tab=students&action=approve&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-success me-1">Duyệt</a>
-                                        <?php endif; ?>
-                                        <a href="index.php?route=users&tab=students&action=delete&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc muốn xóa sinh viên này?');">Xóa</a>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted">Chưa có sinh viên nào đăng ký tài khoản.</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="text-primary m-0">Quản lý tài khoản Sinh viên</h4>
+                    
+                    <!-- Form Tìm kiếm -->
+                    <form method="GET" action="index.php" class="d-flex">
+                        <input type="hidden" name="route" value="users">
+                        <input type="hidden" name="tab" value="students">
+                        <input type="text" name="search" class="form-control form-control-sm me-2" placeholder="Tìm tên hoặc mã SV..." value="<?php echo htmlspecialchars($search ?? ''); ?>" style="width: 250px;">
+                        <button type="submit" class="btn btn-sm btn-primary-custom">Tìm kiếm</button>
+                        <?php if(!empty($search)): ?>
+                            <a href="index.php?route=users&tab=students" class="btn btn-sm btn-outline-secondary ms-1">Xóa lọc</a>
+                        <?php endif; ?>
+                    </form>
                 </div>
+
+                <!-- Form Duyệt hàng loạt -->
+                <form method="POST" action="index.php?route=users&tab=students">
+                    <input type="hidden" name="action" value="approve_multiple">
+                    
+                    <div class="mb-3">
+                        <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Duyệt tất cả tài khoản đã chọn?');">
+                            ✓ Duyệt các mục đã chọn
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th style="width: 40px;">
+                                        <input class="form-check-input" type="checkbox" id="selectAll">
+                                    </th>
+                                    <th>STT</th>
+                                    <th>Mã sinh viên</th>
+                                    <th>Họ tên</th>
+                                    <th>Trạng thái</th>
+                                    <th class="text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (!empty($students) && count($students) > 0): ?>
+                                    <?php foreach ($students as $index => $student): ?>
+                                    <tr>
+                                        <td>
+                                            <?php if (($student['status'] ?? '') == 'pending'): ?>
+                                                <input class="form-check-input student-checkbox" type="checkbox" name="student_ids[]" value="<?php echo $student['id']; ?>">
+                                            <?php endif; ?>
+                                        </td>
+                                        <td><?php echo $offset + $index + 1; ?></td>
+                                        <td class="fw-bold text-primary"><?php echo htmlspecialchars($student['username']); ?></td>
+                                        <td><?php echo htmlspecialchars($student['full_name']); ?></td>
+                                        <td>
+                                            <?php 
+                                                $status = $student['status'] ?? '';
+                                                if ($status == 'pending') echo '<span class="badge bg-warning text-dark">Chờ duyệt</span>';
+                                                elseif ($status == 'active') echo '<span class="badge bg-success">Đã kích hoạt</span>';
+                                                else echo '<span class="badge bg-danger">Từ chối</span>';
+                                            ?>
+                                        </td>
+                                        <td class="text-center">
+                                            <?php if (($student['status'] ?? '') == 'pending'): ?>
+                                                <a href="index.php?route=users&tab=students&action=approve&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-success me-1">Duyệt nhanh</a>
+                                            <?php endif; ?>
+                                            <a href="index.php?route=users&tab=students&action=delete&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc muốn xóa sinh viên này?');">Xóa</a>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-4">Không tìm thấy sinh viên nào.</td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
+
+                <!-- Phân trang -->
+                <?php if (($totalPages ?? 0) > 1): ?>
+                    <nav aria-label="Page navigation" class="mt-3">
+                        <ul class="pagination justify-content-end mb-0">
+                            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                                <li class="page-item <?php echo $i === $page ? 'active' : ''; ?>">
+                                    <a class="page-link" href="index.php?route=users&tab=students&search=<?php echo urlencode($search); ?>&p=<?php echo $i; ?>">
+                                        <?php echo $i; ?>
+                                    </a>
+                                </li>
+                            <?php endfor; ?>
+                        </ul>
+                    </nav>
+                <?php endif; ?>
+
             </div>
         <?php endif; ?>
 
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Script hỗ trợ Checkbox "Chọn tất cả"
+        document.getElementById('selectAll')?.addEventListener('change', function() {
+            let checkboxes = document.querySelectorAll('.student-checkbox');
+            for (let checkbox of checkboxes) {
+                checkbox.checked = this.checked;
+            }
+        });
+    </script>
 </body>
-</html>1
+</html>

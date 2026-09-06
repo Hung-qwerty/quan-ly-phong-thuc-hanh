@@ -1,6 +1,10 @@
 <?php
 session_start();
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\Core\Database;
@@ -12,6 +16,7 @@ use App\Repository\DeviceRepository;
 use App\Controller\DeviceController;
 use App\Repository\MaintenanceRepository;
 use App\Controller\MaintenanceController;
+use App\Controller\ApiDeviceController;
 
 $route = $_GET['route'] ?? $_GET['page'] ?? 'login';
 
@@ -62,6 +67,12 @@ switch ($route) {
         $maintenanceRepo = new MaintenanceRepository($pdo);
         $maintenanceController = new MaintenanceController($maintenanceRepo);
         $maintenanceController->index();
+        break;
+
+    case 'api_devices':
+        $deviceRepo = new DeviceRepository($pdo);
+        $apiController = new ApiDeviceController($deviceRepo);
+        $apiController->search();
         break;
 
     default:

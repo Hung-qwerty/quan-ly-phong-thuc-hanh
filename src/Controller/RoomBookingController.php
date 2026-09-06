@@ -45,7 +45,6 @@ class RoomBookingController
         if (!$user) {
             session_unset();
             session_destroy();
-
             header('Location: index.php?route=login');
             exit;
         }
@@ -67,8 +66,21 @@ class RoomBookingController
 
         $rooms = $this->roomRepo->findAllRooms();
         $devices = $this->roomRepo->findReportableDevices($userId);
-        $myBookings = $this->roomRepo->findBookingsByUser($userId);
-        $myReports = $this->roomRepo->findReportsByUser($userId);
+
+        // Phân trang danh sách đặt phòng của tôi
+        $limit = 10;
+        $bookingPage = max(1, (int)($_GET['p_b'] ?? 1));
+        $bookingOffset = ($bookingPage - 1) * $limit;
+        $totalBookings = $this->roomRepo->countBookingsByUser($userId);
+        $bookingTotalPages = ceil($totalBookings / $limit);
+        $myBookings = $this->roomRepo->findBookingsByUserPaginated($userId, $limit, $bookingOffset);
+
+        // Phân trang danh sách báo hỏng của tôi
+        $reportPage = max(1, (int)($_GET['p_r'] ?? 1));
+        $reportOffset = ($reportPage - 1) * $limit;
+        $totalReports = $this->roomRepo->countReportsByUser($userId);
+        $reportTotalPages = ceil($totalReports / $limit);
+        $myReports = $this->roomRepo->findReportsByUserPaginated($userId, $limit, $reportOffset);
 
         require_once __DIR__ . '/../View/student/roombooking.php';
     }
@@ -118,12 +130,12 @@ class RoomBookingController
         $endTime = $date . ' ' . $end . ':00';
 
         if ($this->roomRepo->hasBookingConflict((int) $roomId, $startTime, $endTime)) {
-            $errors['room_id'] = 'Phòng đã được đặt trong thời gian này.';
+            $errors['room_id'] = 'Phòng đã có lịch được duyệt trong thời gian này.';
             return [$errors, $success];
         }
 
         $this->roomRepo->createBooking($userId, (int) $roomId, $startTime, $endTime, $purpose);
-        $success = 'Đặt phòng thành công.';
+        $success = 'Gửi yêu cầu đặt phòng thành công, vui lòng chờ Cán bộ Lab phê duyệt.';
 
         return [$errors, $success];
     }
@@ -183,7 +195,7 @@ class RoomBookingController
         }
 
         $this->roomRepo->createDeviceReport((int) $deviceId, $userId, $description);
-        $success = 'Báo hỏng thiết bị thành công.';
+        $success = 'Báo hỏng thiết bị thành công. Cán bộ Lab sẽ kiểm tra và bảo trì sớm.';
 
         return [$errors, $success];
     }

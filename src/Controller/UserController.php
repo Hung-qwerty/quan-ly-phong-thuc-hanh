@@ -6,33 +6,49 @@ class UserController {
     public function __construct(private UserRepository $userRepo) {}
 
     public function index(): void {
+        if (empty($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+            http_response_code(403);
+            die('LỖI 403: CẢNH BÁO BẢO MẬT! Bạn không có quyền truy cập trang Quản trị viên.');
+        }
+
         $errors = [];
         $success_msg = "";
         $u = ""; $n = ""; $r = "staff";
         
         $tab = $_GET['tab'] ?? 'internal';
 
-        // Xử lý duyệt sinh viên
         if (isset($_GET['action']) && $_GET['action'] == 'approve' && isset($_GET['id'])) {
             $this->userRepo->approveStudent((int)$_GET['id']);
             header("Location: index.php?route=users&tab=students&msg=approved");
             exit;
         }
 
-        // Xử lý xóa tài khoản
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'approve_multiple') {
+            $ids = $_POST['student_ids'] ?? [];
+            if (!empty($ids) && is_array($ids)) {
+                $ids = array_map('intval', $ids);
+                $this->userRepo->approveMultipleStudents($ids);
+                header("Location: index.php?route=users&tab=students&msg=bulk_approved");
+                exit;
+            } else {
+                header("Location: index.php?route=users&tab=students&msg=no_selection");
+                exit;
+            }
+        }
+
         if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
             $this->userRepo->deleteUser((int)$_GET['id']);
             header("Location: index.php?route=users&tab=" . $tab . "&msg=deleted");
             exit;
         }
 
-        // Xử lý thông báo từ URL chuyển hướng
         if (isset($_GET['msg'])) {
-            if ($_GET['msg'] == 'approved') $success_msg = "Phê duyệt tài khoản sinh viên thành công!";
+            if ($_GET['msg'] == 'approved') $success_msg = "Phê duyệt tài khoản thành công!";
+            if ($_GET['msg'] == 'bulk_approved') $success_msg = "Đã phê duyệt hàng loạt tài khoản thành công!";
             if ($_GET['msg'] == 'deleted') $success_msg = "Xóa tài khoản thành công!";
+            if ($_GET['msg'] == 'no_selection') $errors['general'] = "Vui lòng chọn ít nhất 1 sinh viên để duyệt!";
         }
 
-        // Xử lý thêm tài khoản nội bộ qua POST
         if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_internal_user'])) {
             $u = trim($_POST['username'] ?? '');
             $n = trim($_POST['fullname'] ?? '');
@@ -60,11 +76,17 @@ class UserController {
             }
         }
 
-        // Lấy dữ liệu hiển thị cho các tab
-        $students = $this->userRepo->findStudents();
         $internals = $this->userRepo->findInternals();
 
-        // Gọi View hiển thị
+        $search = trim($_GET['search'] ?? '');
+        $page = max(1, (int)($_GET['p'] ?? 1));
+        $limit = 10;
+        $offset = ($page - 1) * $limit;
+
+        $totalStudents = $this->userRepo->countStudents($search);
+        $totalPages = ceil($totalStudents / $limit);
+        $students = $this->userRepo->findStudentsPaginated($search, $limit, $offset);
+
         require_once __DIR__ . '/../View/admin/quan_ly_user.php';
     }
 }
