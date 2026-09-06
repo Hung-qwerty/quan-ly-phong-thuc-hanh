@@ -363,7 +363,7 @@ class RoomBookingRepository
         int $userId,
         string $description
     ): void {
-
+        // 1. Lưu phiếu báo hỏng
         $stmt = $this->pdo->prepare(
             "
             INSERT INTO device_reports
@@ -388,6 +388,12 @@ class RoomBookingRepository
             $userId,
             $description
         ]);
+
+        // 2. Cập nhật trạng thái thiết bị thành hỏng để Staff thấy và bảo trì
+        $stmtUpdate = $this->pdo->prepare(
+            "UPDATE devices SET status = 'broken' WHERE id = ?"
+        );
+        $stmtUpdate->execute([$deviceId]);
     }
 
 

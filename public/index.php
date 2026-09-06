@@ -6,17 +6,18 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use App\Core\Database;
 use App\Repository\UserRepository;
 use App\Controller\UserController;
-use App\Repository\DeviceMaintenanceRepository;
-use App\Controller\DeviceMaintenanceController;
 use App\Repository\RoomBookingRepository;
 use App\Controller\RoomBookingController;
+use App\Repository\DeviceRepository;
+use App\Controller\DeviceController;
+use App\Repository\MaintenanceRepository;
+use App\Controller\MaintenanceController;
 
 $route = $_GET['route'] ?? $_GET['page'] ?? 'login';
 
 $pdo = Database::connection();
 
 switch ($route) {
-
     case 'login':
         require_once __DIR__ . '/../src/View/auth/login.php';
         break;
@@ -44,16 +45,25 @@ switch ($route) {
         $bookingController->index();
         break;
 
-case 'devices':
-        $devMaintRepo = new DeviceMaintenanceRepository($pdo);
-        $devMaintController = new DeviceMaintenanceController($devMaintRepo);
-        $devMaintController->indexDevices();
+    // LUỒNG MỚI CỦA AN: QUẢN LÝ THIẾT BỊ & DUYỆT LỊCH
+    case 'devices':
+    case 'staff_bookings':
+    case 'borrowings':
+        $deviceRepo = new DeviceRepository($pdo);
+        $deviceController = new DeviceController($deviceRepo);
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $deviceController->handleRequest();
+        } else {
+            $deviceController->index();
+        }
         break;
 
+    // LUỒNG MỚI CỦA AN: BẢO TRÌ
     case 'maintenance':
-        $devMaintRepo = new DeviceMaintenanceRepository($pdo);
-        $devMaintController = new DeviceMaintenanceController($devMaintRepo);
-        $devMaintController->indexMaintenance();
+        $maintenanceRepo = new MaintenanceRepository($pdo);
+        $maintenanceController = new MaintenanceController($maintenanceRepo);
+        $maintenanceController->index();
         break;
 
     default:
