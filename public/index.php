@@ -7,8 +7,6 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use App\Core\Database;
 use App\Repository\UserRepository;
 use App\Controller\UserController;
-use App\Repository\MaintenanceRepository;
-use App\Controller\MaintenanceController;
 use App\Repository\RoomBookingRepository;
 use App\Controller\RoomBookingController;
 
