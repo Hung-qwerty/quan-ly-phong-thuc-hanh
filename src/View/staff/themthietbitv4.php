@@ -727,7 +727,61 @@ tr:hover td{
     .request-tabs{
         overflow-x:auto
     }
+    .staff-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    }
+
+    .staff-name {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .logout-btn {
+        display: inline-block;
+        padding: 7px 14px;
+        background: #dc3545;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        transition: 0.2s;
+    }
+
+    .logout-btn:hover {
+        background: #bb2d3b;
+        color: white;
+    }
 }
+    .staff-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    }
+
+    .staff-name {
+        font-weight: 700;
+        color: #fffdfd;
+    }
+
+    .logout-btn {
+        display: inline-block;
+        padding: 7px 14px;
+        background: #dc3545;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        transition: 0.2s;
+    }
+
+    .logout-btn:hover {
+        background: #bb2d3b;
+        color: white;
+    }
 </style>
 </head>
 
@@ -743,10 +797,15 @@ tr:hover td{
 
         <div class="avatar">S</div>
 
+       <div class="staff-info">
         <div class="staff-name">
-            Đặng Đình Thái An
+                <?php echo htmlspecialchars($staffName); ?>
         </div>
 
+         <a href="index.php?route=logout" class="logout-btn">
+                Đăng xuất
+        </a>
+        </div>
     </div>
 
 </header>
@@ -758,8 +817,8 @@ tr:hover td{
     <div class="logo">
 
         <h2>
-            QUẢN LÝ PHÒNG<br>
-            THỰC HÀNH
+            CHỨC NĂNG CÁN BỘ LAB 
+        
         </h2>
 
     </div>
@@ -782,7 +841,7 @@ tr:hover td{
            class="<?php echo in_array($page, ['staff_bookings','borrowings'], true) ? 'active' : ''; ?>">
 
             <span class="icon">▤</span>
-            <span>Duyệt yêu cầu phòng</span>
+            <span>Duyệt yêu cầu</span>
 
         </a>
 

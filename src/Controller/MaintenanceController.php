@@ -116,6 +116,8 @@ class MaintenanceController
 
         $page = 'maintenance';
 
+        $staffName = $_SESSION['full_name'] ?? 'Cán bộ Lab';
+
         require __DIR__ . '/../View/staff/themthietbitv4.php';
     }
 }

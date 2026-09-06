@@ -79,7 +79,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link <?php echo (($tab ?? '') == 'students') ? 'active' : ''; ?>" href="index.php?route=users&tab=students">
+                <a class="nav-link <?php echo (($tab ?? '') == 'students') ? 'active' : ''; ?>" href="../../public/index.php?route=users&tab=students">
                     Duyệt tài khoản Sinh viên
                 </a>
             </li>
@@ -205,9 +205,9 @@
                                     </td>
                                     <td class="text-center">
                                         <?php if (($student['status'] ?? '') == 'pending'): ?>
-                                            <a href="index.php?route=users&tab=students&action=approve&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-success me-1">Duyệt</a>
+                                            <a href="/quan-ly-phong-thuc-hanh/public/index.php?route=users&tab=students&action=approve&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-success me-1">Duyệt</a>
                                         <?php endif; ?>
-                                        <a href="index.php?route=users&tab=students&action=delete&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc muốn xóa sinh viên này?');">Xóa</a>
+                                        <a href="/quan-ly-phong-thuc-hanh/public/index.php?route=users&tab=students&action=delete&id=<?php echo $student['id']; ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Bạn có chắc muốn xóa sinh viên này?');">Xóa</a>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
