@@ -1,4 +1,32 @@
 ﻿<?php
+namespace App\Controller;
+
+use App\Repository\DeviceRepository;
+
+class ApiDeviceController
+{
+    private DeviceRepository $deviceRepo;
+
+    public function __construct(DeviceRepository $deviceRepo)
+    {
+        $this->deviceRepo = $deviceRepo;
+    }
+
+    public function search(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        
+        $keyword = trim($_GET['q'] ?? '');
+        
+        $devices = $this->deviceRepo->getDevicesPaginated($keyword, 0, '', 10, 0);
+
+        echo json_encode([
+            'ok' => true,
+            'data' => $devices
+        ], JSON_UNESCAPED_UNICODE);
+    }
+}
+<?php
 
 namespace App\Controller;
 
@@ -16,6 +44,11 @@ class DeviceController
 
     public function index(): void
     {
+        if (empty($_SESSION['user_id']) || !in_array($_SESSION['role'], ['staff', 'admin'])) {
+            http_response_code(403);
+            die('Lá»–I 403: Cáº¢NH BÃO Báº¢O Máº¬T! Chá»‰ CÃ¡n bá»™ Lab má»›i cÃ³ quyá»n truy cáº­p trang nÃ y.');
+        }
+
         $devices = $this->deviceRepo->getAllDevices();
         $deviceTypes = $this->deviceRepo->getDeviceTypes();
         $rooms = $this->deviceRepo->getRooms();
@@ -33,7 +66,6 @@ class DeviceController
             $page = 'devices';
         }
 
-        // Tá»I Æ¯U UX: PhÃ¢n trang vÃ  bá»™ lá»c cho Thiáº¿t bá»‹
         $devSearch = trim($_GET['dev_search'] ?? '');
         $devRoom = (int)($_GET['dev_room'] ?? 0);
         $devStatus = trim($_GET['dev_status'] ?? '');
@@ -45,7 +77,6 @@ class DeviceController
         $devTotalPages = ceil($devTotalCount / $devLimit);
         $paginatedDevices = $this->deviceRepo->getDevicesPaginated($devSearch, $devRoom, $devStatus, $devLimit, $devOffset);
 
-        // Tá»I Æ¯U UX: PhÃ¢n trang vÃ  bá»™ lá»c cho Duyá»‡t Ä‘áº·t phÃ²ng
         $pendingBookings = 0;
         $processedBookings = 0;
         foreach ($bookings as $booking) {
@@ -97,60 +128,51 @@ class DeviceController
             return;
         }
 
+        if (empty($_SESSION['user_id']) || !in_array($_SESSION['role'], ['staff', 'admin'])) {
+            http_response_code(403);
+            die('Lá»–I 403: Cáº¢NH BÃO Báº¢O Máº¬T!');
+        }
+
+        if (!hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'] ?? '')) {
+            http_response_code(419);
+            die('Lá»–I 419: Token báº£o máº­t CSRF khÃ´ng há»£p lá»‡ hoáº·c Ä‘Ã£ háº¿t háº¡n. Vui lÃ²ng táº£i láº¡i trang!');
+        }
+
         $action = $_POST['action'] ?? '';
 
         switch ($action) {
             case 'add':
                 $this->addDevice();
                 break;
-
             case 'add_type':
                 $this->addDeviceType();
                 break;
-
             case 'edit':
                 $this->editDevice();
                 break;
-
             case 'delete':
                 $this->deleteDevice();
                 break;
-
             case 'booking':
                 $this->handleBooking();
                 break;
-
             case 'bulk_booking':
                 $this->handleBulkBooking();
                 break;
-
             default:
                 $this->index();
                 break;
         }
     }
 
-    private function addDeviceType(): void
-    {
+    private function addDeviceType(): void {
         $name = trim($_POST['type_name'] ?? '');
-
-        if ($name === '') {
-            $this->setMessage('Vui lÃ²ng nháº­p tÃªn loáº¡i thiáº¿t bá»‹.', 'error');
-            $this->redirect('devices');
-        }
-
-        try {
-            $this->deviceRepo->addDeviceType($name);
-            $this->setMessage('ThÃªm loáº¡i thiáº¿t bá»‹ thÃ nh cÃ´ng!', 'success');
-        } catch (PDOException $e) {
-            $this->setMessage('KhÃ´ng thá»ƒ thÃªm loáº¡i thiáº¿t bá»‹.', 'error');
-        }
-
+        if ($name === '') { $this->setMessage('Vui lÃ²ng nháº­p tÃªn loáº¡i thiáº¿t bá»‹.', 'error'); $this->redirect('devices'); }
+        try { $this->deviceRepo->addDeviceType($name); $this->setMessage('ThÃªm loáº¡i thiáº¿t bá»‹ thÃ nh cÃ´ng!', 'success'); } catch (PDOException $e) { $this->setMessage('KhÃ´ng thá»ƒ thÃªm loáº¡i thiáº¿t bá»‹.', 'error'); }
         $this->redirect('devices');
     }
 
-    private function addDevice(): void
-    {
+    private function addDevice(): void {
         $deviceCode = trim($_POST['device_code'] ?? '');
         $deviceName = trim($_POST['device_name'] ?? '');
         $typeId = (int)($_POST['type_id'] ?? 0);
@@ -162,9 +184,7 @@ class DeviceController
             $this->redirect('devices');
         }
 
-        if (!in_array($status, ['active', 'broken', 'maintenance'], true)) {
-            $status = 'active';
-        }
+        if (!in_array($status, ['active', 'broken', 'maintenance'], true)) { $status = 'active'; }
 
         try {
             $this->deviceRepo->addDevice($deviceCode, $deviceName, $typeId, $roomId, $status);
@@ -172,12 +192,10 @@ class DeviceController
         } catch (PDOException $e) {
             $this->setMessage('KhÃ´ng thá»ƒ thÃªm thiáº¿t bá»‹. MÃ£ thiáº¿t bá»‹ cÃ³ thá»ƒ Ä‘Ã£ tá»“n táº¡i.', 'error');
         }
-
         $this->redirect('devices');
     }
 
-    private function editDevice(): void
-    {
+    private function editDevice(): void {
         $id = (int)($_POST['id'] ?? 0);
         $deviceCode = trim($_POST['device_code'] ?? '');
         $deviceName = trim($_POST['device_name'] ?? '');
@@ -196,9 +214,7 @@ class DeviceController
             $this->redirect('devices');
         }
 
-        if (!in_array($status, ['active', 'broken', 'maintenance'], true)) {
-            $status = 'active';
-        }
+        if (!in_array($status, ['active', 'broken', 'maintenance'], true)) { $status = 'active'; }
 
         try {
             $this->deviceRepo->updateDevice($id, $deviceCode, $deviceName, $typeId, $roomId, $status);
@@ -209,47 +225,23 @@ class DeviceController
         $this->redirect('devices');
     }
 
-    private function deleteDevice(): void
-    {
+    private function deleteDevice(): void {
         $id = (int)($_POST['id'] ?? 0);
-
-        if ($id <= 0) {
-            $this->setMessage('Thiáº¿t bá»‹ khÃ´ng há»£p lá»‡.', 'error');
-            $this->redirect('devices');
-        }
-
-        try {
-            $this->deviceRepo->deleteDevice($id);
-            $this->setMessage('XÃ³a thiáº¿t bá»‹ thÃ nh cÃ´ng!', 'success');
-        } catch (PDOException $e) {
-            $this->setMessage('KhÃ´ng thá»ƒ xÃ³a thiáº¿t bá»‹. Thiáº¿t bá»‹ cÃ³ thá»ƒ Ä‘ang Ä‘Æ°á»£c sá»­ dá»¥ng.', 'error');
-        }
-
+        if ($id <= 0) { $this->setMessage('Thiáº¿t bá»‹ khÃ´ng há»£p lá»‡.', 'error'); $this->redirect('devices'); }
+        try { $this->deviceRepo->deleteDevice($id); $this->setMessage('XÃ³a thiáº¿t bá»‹ thÃ nh cÃ´ng!', 'success'); } catch (PDOException $e) { $this->setMessage('KhÃ´ng thá»ƒ xÃ³a thiáº¿t bá»‹. Thiáº¿t bá»‹ cÃ³ thá»ƒ Ä‘ang Ä‘Æ°á»£c sá»­ dá»¥ng.', 'error'); }
         $this->redirect('devices');
     }
 
-    private function handleBooking(): void
-    {
+    private function handleBooking(): void {
         $id = (int)($_POST['id'] ?? 0);
         $status = $_POST['status'] ?? '';
-
-        if ($id <= 0 || !in_array($status, ['approved', 'rejected'], true)) {
-            $this->setMessage('YÃªu cáº§u phÃ²ng khÃ´ng há»£p lá»‡.', 'error');
-            $this->redirect('staff_bookings');
-        }
-
+        if ($id <= 0 || !in_array($status, ['approved', 'rejected'], true)) { $this->setMessage('YÃªu cáº§u phÃ²ng khÃ´ng há»£p lá»‡.', 'error'); $this->redirect('staff_bookings'); }
         $booking = $this->deviceRepo->getBookingById($id);
-        if (!$booking || $booking['status'] !== 'pending') {
-            $this->setMessage('KhÃ´ng tÃ¬m tháº¥y yÃªu cáº§u hoáº·c yÃªu cáº§u Ä‘Ã£ Ä‘Æ°á»£c xá»­ lÃ½.', 'error');
-            $this->redirect('staff_bookings');
-        }
+        if (!$booking || $booking['status'] !== 'pending') { $this->setMessage('KhÃ´ng tÃ¬m tháº¥y yÃªu cáº§u hoáº·c yÃªu cáº§u Ä‘Ã£ Ä‘Æ°á»£c xá»­ lÃ½.', 'error'); $this->redirect('staff_bookings'); }
 
         if ($status === 'approved') {
             $conflict = $this->deviceRepo->checkBookingConflict((int)$booking['room_id'], $booking['start_time'], $booking['end_time'], (int)$booking['id']);
-            if ($conflict) {
-                $this->setMessage('KhÃ´ng thá»ƒ duyá»‡t. PhÃ²ng Ä‘Ã£ cÃ³ lá»‹ch Ä‘Æ°á»£c duyá»‡t trong khoáº£ng thá»i gian nÃ y.', 'error');
-                $this->redirect('staff_bookings');
-            }
+            if ($conflict) { $this->setMessage('KhÃ´ng thá»ƒ duyá»‡t. PhÃ²ng Ä‘Ã£ cÃ³ lá»‹ch Ä‘Æ°á»£c duyá»‡t trong khoáº£ng thá»i gian nÃ y.', 'error'); $this->redirect('staff_bookings'); }
         }
 
         try {
@@ -260,22 +252,14 @@ class DeviceController
             } else {
                 $this->setMessage('ÄÃ£ tá»« chá»‘i yÃªu cáº§u Ä‘áº·t phÃ²ng!', 'success');
             }
-        } catch (PDOException $e) {
-            $this->setMessage('Lá»—i há»‡ thá»‘ng khi cáº­p nháº­t Ä‘áº·t phÃ²ng.', 'error');
-        }
+        } catch (PDOException $e) { $this->setMessage('Lá»—i há»‡ thá»‘ng khi cáº­p nháº­t Ä‘áº·t phÃ²ng.', 'error'); }
         $this->redirect('staff_bookings');
     }
 
-    private function handleBulkBooking(): void
-    {
+    private function handleBulkBooking(): void {
         $bulkAction = $_POST['bulk_action'] ?? '';
         $bookingIds = $_POST['booking_ids'] ?? [];
-
-        if (empty($bookingIds) || !is_array($bookingIds)) {
-            $this->setMessage('Vui lÃ²ng chá»n Ã­t nháº¥t má»™t yÃªu cáº§u Ä‘á»ƒ xá»­ lÃ½.', 'error');
-            $this->redirect('staff_bookings');
-        }
-
+        if (empty($bookingIds) || !is_array($bookingIds)) { $this->setMessage('Vui lÃ²ng chá»n Ã­t nháº¥t má»™t yÃªu cáº§u Ä‘á»ƒ xá»­ lÃ½.', 'error'); $this->redirect('staff_bookings'); }
         if ($bulkAction === 'approve') {
             $count = $this->deviceRepo->approveMultipleBookings($bookingIds);
             $this->setMessage("ÄÃ£ phÃª duyá»‡t thÃ nh cÃ´ng {$count} yÃªu cáº§u (tá»± Ä‘á»™ng tá»« chá»‘i cÃ¡c lá»‹ch trÃ¹ng).", 'success');
@@ -283,18 +267,15 @@ class DeviceController
             $count = $this->deviceRepo->rejectMultipleBookings($bookingIds);
             $this->setMessage("ÄÃ£ tá»« chá»‘i {$count} yÃªu cáº§u Ä‘Æ°á»£c chá»n.", 'success');
         }
-
         $this->redirect('staff_bookings');
     }
 
-    private function setMessage(string $message, string $type): void
-    {
+    private function setMessage(string $message, string $type): void {
         $_SESSION['device_message'] = $message;
         $_SESSION['device_message_type'] = $type;
     }
 
-    private function redirect(string $page = 'devices'): void
-    {
+    private function redirect(string $page = 'devices'): void {
         header('Location: index.php?page=' . urlencode($page));
         exit;
     }
@@ -632,20 +613,23 @@ class UserController {
     public function __construct(private UserRepository $userRepo) {}
 
     public function index(): void {
+        if (empty($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
+            http_response_code(403);
+            die('Lá»–I 403: Cáº¢NH BÃO Báº¢O Máº¬T! Báº¡n khÃ´ng cÃ³ quyá»n truy cáº­p trang Quáº£n trá»‹ viÃªn.');
+        }
+
         $errors = [];
         $success_msg = "";
         $u = ""; $n = ""; $r = "staff";
         
         $tab = $_GET['tab'] ?? 'internal';
 
-        // Xá»­ lÃ½ duyá»‡t 1 sinh viÃªn
         if (isset($_GET['action']) && $_GET['action'] == 'approve' && isset($_GET['id'])) {
             $this->userRepo->approveStudent((int)$_GET['id']);
             header("Location: index.php?route=users&tab=students&msg=approved");
             exit;
         }
 
-        // Tá»I Æ¯U UX: Xá»­ lÃ½ duyá»‡t hÃ ng loáº¡t qua POST
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'approve_multiple') {
             $ids = $_POST['student_ids'] ?? [];
             if (!empty($ids) && is_array($ids)) {
@@ -659,14 +643,12 @@ class UserController {
             }
         }
 
-        // Xá»­ lÃ½ xÃ³a tÃ i khoáº£n
         if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
             $this->userRepo->deleteUser((int)$_GET['id']);
             header("Location: index.php?route=users&tab=" . $tab . "&msg=deleted");
             exit;
         }
 
-        // ThÃ´ng bÃ¡o
         if (isset($_GET['msg'])) {
             if ($_GET['msg'] == 'approved') $success_msg = "PhÃª duyá»‡t tÃ i khoáº£n thÃ nh cÃ´ng!";
             if ($_GET['msg'] == 'bulk_approved') $success_msg = "ÄÃ£ phÃª duyá»‡t hÃ ng loáº¡t tÃ i khoáº£n thÃ nh cÃ´ng!";
@@ -674,7 +656,6 @@ class UserController {
             if ($_GET['msg'] == 'no_selection') $errors['general'] = "Vui lÃ²ng chá»n Ã­t nháº¥t 1 sinh viÃªn Ä‘á»ƒ duyá»‡t!";
         }
 
-        // Xá»­ lÃ½ thÃªm tÃ i khoáº£n ná»™i bá»™
         if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_internal_user'])) {
             $u = trim($_POST['username'] ?? '');
             $n = trim($_POST['fullname'] ?? '');
@@ -702,20 +683,17 @@ class UserController {
             }
         }
 
-        // Láº¥y dá»¯ liá»‡u tab Ná»™i bá»™
         $internals = $this->userRepo->findInternals();
 
-        // Tá»I Æ¯U UX: Logic PhÃ¢n trang & TÃ¬m kiáº¿m cho tab Sinh viÃªn
         $search = trim($_GET['search'] ?? '');
         $page = max(1, (int)($_GET['p'] ?? 1));
-        $limit = 10; // Sá»‘ dÃ²ng trÃªn 1 trang
+        $limit = 10;
         $offset = ($page - 1) * $limit;
 
         $totalStudents = $this->userRepo->countStudents($search);
         $totalPages = ceil($totalStudents / $limit);
         $students = $this->userRepo->findStudentsPaginated($search, $limit, $offset);
 
-        // Gá»i View hiá»ƒn thá»‹
         require_once __DIR__ . '/../View/admin/quan_ly_user.php';
     }
 }
@@ -1713,6 +1691,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             } elseif (isset($user['status']) && $user['status'] == 'rejected') {
                 $error = "TÃ i khoáº£n cá»§a báº¡n Ä‘Ã£ bá»‹ tá»« chá»‘i truy cáº­p!";
             } else {
+                
+                session_regenerate_id(true);
 
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
@@ -2269,7 +2249,6 @@ $rooms = $rooms ?? [];
 $bookings = $bookings ?? [];
 $borrowings = $borrowings ?? [];
 
-// Khá»Ÿi táº¡o cÃ¡c biáº¿n phÃ¢n trang cho thiáº¿t bá»‹
 $paginatedDevices = $paginatedDevices ?? $devices;
 $devSearch = $devSearch ?? '';
 $devRoom = $devRoom ?? 0;
@@ -2278,7 +2257,6 @@ $devPage = $devPage ?? 1;
 $devTotalPages = $devTotalPages ?? 1;
 $devOffset = $devOffset ?? 0;
 
-// Khá»Ÿi táº¡o cÃ¡c biáº¿n phÃ¢n trang cho Ä‘áº·t phÃ²ng
 $paginatedBookings = $paginatedBookings ?? $bookings;
 $bookingSearch = $bookingSearch ?? '';
 $bookingStatusFilter = $bookingStatusFilter ?? '';
@@ -2362,7 +2340,7 @@ button{border:0;border-radius:6px;padding:8px 14px;color:#fff;cursor:pointer;fon
 .table-wrapper{width:100%;overflow-x:auto}
 table{width:100%;border-collapse:collapse}
 th{background:#003399;color:#fff;padding:12px 14px;text-align:left;font-size:13px;font-weight:600}
-td{padding:12px 14px;border-bottom:1px solid #eee;font-size:13px}
+td{padding:12px 14px;border-bottom:1px solid #eee;font-size:13px;transition:opacity 0.2s;}
 tr:hover td{background:#f8fafc}
 .actions{display:flex;gap:6px}
 .status{display:inline-block;padding:4px 8px;border-radius:12px;font-size:11px;font-weight:600}
@@ -2439,6 +2417,9 @@ tr:hover td{background:#f8fafc}
     <div class="form-area">
         <form method="POST">
             <input type="hidden" name="action" value="add_type">
+            <!-- CSRF Token -->
+            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+            
             <div style="display: flex; gap: 15px; align-items: end;">
                 <div class="form-group" style="flex: 1; margin: 0;">
                     <label>TÃªn loáº¡i thiáº¿t bá»‹</label>
@@ -2468,10 +2449,9 @@ tr:hover td{background:#f8fafc}
             <p>Quáº£n lÃ½ thÃ´ng tin vÃ  tráº¡ng thÃ¡i thiáº¿t bá»‹</p>
         </div>
 
-        <!-- Bá»˜ Lá»ŒC VÃ€ TÃŒM KIáº¾M THIáº¾T Bá»Š -->
+        <!-- Bá»˜ Lá»ŒC VÃ€ TÃŒM KIáº¾M (LIVE SEARCH FETCH API) -->
         <form method="GET" action="index.php" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
             <input type="hidden" name="page" value="devices">
-            
             <select name="dev_room" style="height: 34px; width: 140px;">
                 <option value="0">-- Táº¥t cáº£ phÃ²ng --</option>
                 <?php foreach ($rooms as $room): ?>
@@ -2488,7 +2468,8 @@ tr:hover td{background:#f8fafc}
                 <option value="maintenance" <?php echo $devStatus === 'maintenance' ? 'selected' : ''; ?>>Äang báº£o trÃ¬</option>
             </select>
 
-            <input type="text" name="dev_search" placeholder="MÃ£ TB hoáº·c tÃªn..." value="<?php echo htmlspecialchars($devSearch); ?>" style="height: 34px; width: 180px;">
+            <!-- ThÃªm ID liveSearchDevice Ä‘á»ƒ JS báº¯t sá»± kiá»‡n BÃ€I 8 -->
+            <input type="text" id="liveSearchDevice" name="dev_search" placeholder="MÃ£ TB hoáº·c tÃªn..." value="<?php echo htmlspecialchars($devSearch); ?>" style="height: 34px; width: 180px;">
             <button type="submit" class="primary" style="padding: 7px 14px;">Lá»c</button>
 
             <?php if (!empty($devSearch) || $devRoom > 0 || !empty($devStatus)): ?>
@@ -2500,6 +2481,9 @@ tr:hover td{background:#f8fafc}
     <div class="form-area">
         <form method="POST">
             <input type="hidden" name="action" value="add">
+            <!-- CSRF Token -->
+            <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+            
             <div class="form-grid">
                 <div class="form-group">
                     <label>MÃ£ thiáº¿t bá»‹</label>
@@ -2553,7 +2537,8 @@ tr:hover td{background:#f8fafc}
                     <th width="140">Thao tÃ¡c</th>
                 </tr>
             </thead>
-            <tbody>
+            <!-- ThÃªm ID cho tbody Ä‘á»ƒ JS Ä‘á»• data BÃ€I 8 vÃ o Ä‘Ã¢y -->
+            <tbody id="deviceTableBody">
                 <?php if (empty($paginatedDevices)): ?>
                     <tr><td colspan="7" style="text-align:center;color:#888;padding: 25px;">KhÃ´ng tÃ¬m tháº¥y thiáº¿t bá»‹ nÃ o.</td></tr>
                 <?php endif; ?>
@@ -2576,6 +2561,8 @@ tr:hover td{background:#f8fafc}
                                 <form method="POST" style="display:inline">
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="id" value="<?php echo $device['id']; ?>">
+                                    <!-- CSRF Token -->
+                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
                                     <button type="submit" class="danger" onclick="return confirm('Báº¡n cÃ³ cháº¯c muá»‘n xÃ³a thiáº¿t bá»‹ nÃ y khÃ´ng?')">XÃ³a</button>
                                 </form>
                             </div>
@@ -2586,6 +2573,9 @@ tr:hover td{background:#f8fafc}
                             <form method="POST">
                                 <input type="hidden" name="action" value="edit">
                                 <input type="hidden" name="id" value="<?php echo $device['id']; ?>">
+                                <!-- CSRF Token -->
+                                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                                
                                 <div class="edit-grid">
                                     <div class="form-group">
                                         <label>MÃ£ thiáº¿t bá»‹</label>
@@ -2636,9 +2626,8 @@ tr:hover td{background:#f8fafc}
         </table>
     </div>
 
-    <!-- PHÃ‚N TRANG THIáº¾T Bá»Š -->
     <?php if ($devTotalPages > 1): ?>
-        <div class="pagination-wrap">
+        <div class="pagination-wrap" id="devicePagination">
             <?php for ($i = 1; $i <= $devTotalPages; $i++): ?>
                 <a href="index.php?page=devices&dev_search=<?php echo urlencode($devSearch); ?>&dev_room=<?php echo $devRoom; ?>&dev_status=<?php echo urlencode($devStatus); ?>&p=<?php echo $i; ?>" class="<?php echo $i === $devPage ? 'active' : ''; ?>">
                     <?php echo $i; ?>
@@ -2652,7 +2641,6 @@ tr:hover td{background:#f8fafc}
 <?php elseif ($page === 'staff_bookings' || $page === 'borrowings'): ?>
 <div class="page-title">
     <h1>DUYá»†T YÃŠU Cáº¦U</h1>
-    <p>CÃ¡n bá»™ Lab xem vÃ  xá»­ lÃ½ cÃ¡c yÃªu cáº§u tá»« ngÆ°á»i dÃ¹ng</p>
 </div>
 
 <div class="request-tabs">
@@ -2673,17 +2661,14 @@ tr:hover td{background:#f8fafc}
         
         <form method="GET" action="index.php" style="display: flex; gap: 10px; align-items: center;">
             <input type="hidden" name="page" value="staff_bookings">
-            
             <select name="status_filter" style="height: 34px; width: 140px;">
                 <option value="">-- Táº¥t cáº£ tráº¡ng thÃ¡i --</option>
                 <option value="pending" <?php echo $bookingStatusFilter === 'pending' ? 'selected' : ''; ?>>Chá» duyá»‡t</option>
                 <option value="approved" <?php echo $bookingStatusFilter === 'approved' ? 'selected' : ''; ?>>ÄÃ£ duyá»‡t</option>
                 <option value="rejected" <?php echo $bookingStatusFilter === 'rejected' ? 'selected' : ''; ?>>Tá»« chá»‘i</option>
             </select>
-
             <input type="text" name="search" placeholder="MÃ£ SV, há» tÃªn, phÃ²ng..." value="<?php echo htmlspecialchars($bookingSearch); ?>" style="height: 34px; width: 220px;">
             <button type="submit" class="primary" style="padding: 7px 14px;">Lá»c</button>
-            
             <?php if (!empty($bookingSearch) || !empty($bookingStatusFilter)): ?>
                 <a href="index.php?page=staff_bookings" style="font-size: 13px; color: #666; text-decoration: none;">XÃ³a lá»c</a>
             <?php endif; ?>
@@ -2692,6 +2677,7 @@ tr:hover td{background:#f8fafc}
 
     <form method="POST" action="index.php?page=staff_bookings">
         <input type="hidden" name="action" value="bulk_booking">
+        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
         
         <div style="padding: 12px 20px; background: #fafbfc; border-bottom: 1px solid #eee; display: flex; gap: 10px; align-items: center;">
             <span style="font-size: 13px; font-weight: 600; color: #555;">Thao tÃ¡c hÃ ng loáº¡t:</span>
@@ -2766,11 +2752,13 @@ tr:hover td{background:#f8fafc}
                 <input type="hidden" name="action" value="booking">
                 <input type="hidden" name="id" value="<?php echo $booking['id']; ?>">
                 <input type="hidden" name="status" value="approved">
+                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
             </form>
             <form id="single-reject-<?php echo $booking['id']; ?>" method="POST" action="index.php?page=staff_bookings" style="display:none;">
                 <input type="hidden" name="action" value="booking">
                 <input type="hidden" name="id" value="<?php echo $booking['id']; ?>">
                 <input type="hidden" name="status" value="rejected">
+                <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
             </form>
         <?php endif; ?>
     <?php endforeach; ?>
@@ -2794,13 +2782,6 @@ tr:hover td{background:#f8fafc}
 <?php elseif ($page === 'maintenance'): ?>
 <div class="page-title">
     <h1>Báº£o trÃ¬ thiáº¿t bá»‹</h1>
-    <p>Quáº£n lÃ½ tÃ¬nh tráº¡ng há»ng hÃ³c vÃ  quÃ¡ trÃ¬nh báº£o trÃ¬ thiáº¿t bá»‹</p>
-</div>
-
-<div class="stats">
-    <div class="stat"><div class="stat-label">Tá»•ng thiáº¿t bá»‹</div><div class="stat-number"><?php echo $maintenanceStats['tong']; ?></div></div>
-    <div class="stat"><div class="stat-label">Äang hoáº¡t Ä‘á»™ng</div><div class="stat-number"><?php echo $maintenanceStats['hoatdong']; ?></div></div>
-    <div class="stat"><div class="stat-label">Äang báº£o trÃ¬ / Há»ng</div><div class="stat-number"><?php echo $maintenanceStats['baotri'] + $maintenanceStats['hong']; ?></div></div>
 </div>
 
 <div class="card">
@@ -2843,6 +2824,7 @@ tr:hover td{background:#f8fafc}
                             <?php if ($deviceStatus === 'broken'): ?>
                                 <form method="POST">
                                     <input type="hidden" name="batdau_baotri" value="1">
+                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
                                     <input type="hidden" name="device_id" value="<?php echo (int)$tb['device_id']; ?>">
                                     <input type="hidden" name="description" value="Báº¯t Ä‘áº§u báº£o trÃ¬ thiáº¿t bá»‹">
                                     <button type="submit" class="primary">Báº¯t Ä‘áº§u</button>
@@ -2850,6 +2832,7 @@ tr:hover td{background:#f8fafc}
                             <?php elseif ($deviceStatus === 'maintenance' && !empty($tb['maintenance_id'])): ?>
                                 <form method="POST">
                                     <input type="hidden" name="capnhat" value="1">
+                                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
                                     <input type="hidden" name="maintenance_id" value="<?php echo (int)$tb['maintenance_id']; ?>">
                                     <input type="hidden" name="device_id" value="<?php echo (int)$tb['device_id']; ?>">
                                     <input type="hidden" name="status" value="HoÃ n thÃ nh">
@@ -2873,10 +2856,78 @@ tr:hover td{background:#f8fafc}
 </div>
 
 <script>
+// Logic Chá»n táº¥t cáº£ (CheckBox)
 document.getElementById('selectAllBookings')?.addEventListener('change', function() {
     const checkboxes = document.querySelectorAll('.booking-checkbox');
     checkboxes.forEach(cb => cb.checked = this.checked);
 });
+
+// BÃ€I 8: TÃNH NÄ‚NG FETCH API - LIVE SEARCH TÃŒM KIáº¾M THIáº¾T Bá»Š Báº°NG JAVASCRIPT
+const searchInput = document.getElementById('liveSearchDevice');
+const tbody = document.getElementById('deviceTableBody');
+
+if (searchInput && tbody) {
+    let timeout = null;
+    searchInput.addEventListener('input', function(e) {
+        clearTimeout(timeout);
+        // Ká»¹ thuáº­t Debounce (BÃ i 8): Äá»£i 300ms sau khi ngá»«ng gÃµ má»›i gá»­i request Ä‘á»ƒ trÃ¡nh ngháº½n Server
+        timeout = setTimeout(async () => {
+            const keyword = e.target.value;
+            try {
+                tbody.style.opacity = '0.5'; // Hiá»‡u á»©ng Ä‘ang load
+                
+                // Gá»i Endpoint JSON báº±ng Fetch API (BÃ i 8)
+                const res = await fetch('index.php?route=api_devices&q=' + encodeURIComponent(keyword), {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (!res.ok) throw new Error('HTTP error');
+                
+                const json = await res.json();
+                tbody.innerHTML = ''; 
+
+                // Táº¯t phÃ¢n trang tÄ©nh cá»§a PHP Ä‘i khi Ä‘ang dÃ¹ng Live Search
+                const pagination = document.getElementById('devicePagination');
+                if (pagination) pagination.style.display = keyword ? 'none' : 'flex';
+
+                if (json.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#888;padding: 25px;">KhÃ´ng tÃ¬m tháº¥y thiáº¿t bá»‹ nÃ o qua Live Search.</td></tr>';
+                } else {
+                    json.data.forEach((dev, index) => {
+                        const tr = document.createElement('tr');
+                        
+                        // Cáº­p nháº­t DOM an toÃ n chá»‘ng XSS báº±ng textContent thay vÃ¬ innerHTML (BÃ i 8)
+                        const tdStt = document.createElement('td'); tdStt.textContent = index + 1;
+                        
+                        const tdCode = document.createElement('td'); 
+                        const strong = document.createElement('strong'); strong.textContent = dev.device_code;
+                        tdCode.appendChild(strong);
+                        
+                        const tdName = document.createElement('td'); tdName.textContent = dev.device_name;
+                        const tdType = document.createElement('td'); tdType.textContent = dev.type_name;
+                        const tdRoom = document.createElement('td'); tdRoom.textContent = dev.room_code;
+                        
+                        const tdStatus = document.createElement('td');
+                        const span = document.createElement('span');
+                        span.className = 'device-status device-' + dev.status;
+                        let statusText = dev.status === 'active' ? 'Hoáº¡t Ä‘á»™ng' : (dev.status === 'broken' ? 'Há»ng' : 'Äang báº£o trÃ¬');
+                        span.innerHTML = '<span class="device-status-dot"></span> ' + statusText;
+                        tdStatus.appendChild(span);
+                        
+                        const tdAction = document.createElement('td');
+                        tdAction.innerHTML = '<span style="color:#198754; font-size:12px; font-weight:bold;">(Live Data)</span>';
+                        
+                        tr.append(tdStt, tdCode, tdName, tdType, tdRoom, tdStatus, tdAction);
+                        tbody.appendChild(tr);
+                    });
+                }
+                tbody.style.opacity = '1';
+            } catch (err) {
+                console.error("Lá»—i Fetch API:", err);
+                tbody.style.opacity = '1';
+            }
+        }, 300);
+    });
+}
 
 function moSua(id){
     const row = document.getElementById("edit-" + id);
@@ -2888,7 +2939,6 @@ function dongSua(id){
     if(row){ row.classList.remove("active"); }
 }
 </script>
-
 </body>
 </html>
 <?php
@@ -3356,6 +3406,10 @@ switch ($page) {
 <?php
 session_start();
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use App\Core\Database;
@@ -3367,6 +3421,7 @@ use App\Repository\DeviceRepository;
 use App\Controller\DeviceController;
 use App\Repository\MaintenanceRepository;
 use App\Controller\MaintenanceController;
+use App\Controller\ApiDeviceController;
 
 $route = $_GET['route'] ?? $_GET['page'] ?? 'login';
 
@@ -3417,6 +3472,12 @@ switch ($route) {
         $maintenanceRepo = new MaintenanceRepository($pdo);
         $maintenanceController = new MaintenanceController($maintenanceRepo);
         $maintenanceController->index();
+        break;
+
+    case 'api_devices':
+        $deviceRepo = new DeviceRepository($pdo);
+        $apiController = new ApiDeviceController($deviceRepo);
+        $apiController->search();
         break;
 
     default:
