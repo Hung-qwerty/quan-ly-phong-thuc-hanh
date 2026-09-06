@@ -44,12 +44,6 @@ switch ($route) {
         $bookingController->index();
         break;
 
-    case 'bookings':
-        $bookingRepo = new RoomBookingRepository($pdo);
-        $bookingController = new RoomBookingController($bookingRepo);
-        $bookingController->index();
-        break;
-
 case 'devices':
         $devMaintRepo = new DeviceMaintenanceRepository($pdo);
         $devMaintController = new DeviceMaintenanceController($devMaintRepo);
