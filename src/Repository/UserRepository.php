@@ -10,7 +10,6 @@ class UserRepository {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Hàm cũ giữ lại để dự phòng
     public function findStudents(): array {
         $stmt = $this->pdo->query("SELECT * FROM users WHERE role = 'student' ORDER BY (status = 'pending') DESC, id DESC");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
