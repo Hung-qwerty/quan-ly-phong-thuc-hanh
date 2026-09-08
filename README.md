@@ -1,6 +1,6 @@
 # Quản lý Phòng thực hành và Thiết bị MVC Demo
 
-Hệ demo dùng trong học phần Lập trình Web.
+https://www.figma.com/design/po2oSzaFBVGdzNWGh4UVYe/Quan-ly-phong-thuc-hanh?node-id=0-1&t=4fNho0xDFQGlT5tK-0
 
 ## 1. Tên đề tài
 * **Hệ thống Quản lý Phòng thực hành và Thiết bị**
