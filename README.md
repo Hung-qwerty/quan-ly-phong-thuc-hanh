@@ -1,5 +1,7 @@
 # Quản lý Phòng thực hành và Thiết bị MVC Demo
 
+Hệ demo dùng trong học phần Lập trình Web.
+
 ## 1. Tên đề tài
 * **Hệ thống Quản lý Phòng thực hành và Thiết bị**
 
@@ -17,6 +19,7 @@ Quản lý Phòng thực hành và Thiết bị là dự án được dùng đ�
 ```text
 quan-ly-phong-thuc-hanh/
 ├── composer.json
+├── install.php               ← File cài đặt tự động CSDL
 ├── config/
 │   └── database.php
 ├── database/
@@ -63,36 +66,37 @@ quan-ly-phong-thuc-hanh/
 ## 5. Sơ đồ ERD Cơ sở dữ liệu
 ![Sơ đồ ERD hệ thống](./erd.png)
 
-## 6. Cài trên WAMP / XAMPP
+## 6. Cài đặt nhanh trên WAMP / XAMPP
 
-1. Chép thư mục vào:
+Hệ thống được tích hợp sẵn file cài đặt tự động (`install.php`), giúp khởi tạo CSDL mà không cần import thủ công qua phpMyAdmin.
+
+1. Chép thư mục dự án vào:
 
 ```text
 C:\wamp64\www\quan-ly-phong-thuc-hanh
 ```
-*(hoặc `C:\xampp\htdocs\quan-ly-phong-thuc-hanh`)*
+*(hoặc `C:\xampp\htdocs\quan-ly-phong-thuc-hanh` nếu dùng XAMPP)*
 
-2. Mở phpMyAdmin tạo database mới: `quan_ly_phong_thuc_hanh`.
-3. Import lần lượt 2 file:
-
-```text
-database/schema.sql
-database/seed.sql
-```
-
-4. Mở terminal tại thư mục project:
+2. Mở terminal tại thư mục project và cập nhật nạp lớp PSR-4:
 
 ```bash
 composer dump-autoload
 ```
 
-5. Truy cập:
+3. Mở trình duyệt và chạy công cụ cài đặt tự động:
+
+```text
+http://localhost/quan-ly-phong-thuc-hanh/install.php
+```
+*(Hệ thống sẽ tự động tạo database `quan_ly_phong_thuc_hanh`, nạp các bảng và dữ liệu mẫu tiếng Việt).*
+
+4. Sau khi cài đặt xong, truy cập hệ thống tại:
 
 ```text
 http://localhost/quan-ly-phong-thuc-hanh/public/index.php
 ```
 
-Nếu mật khẩu MySQL root của WAMP/XAMPP không rỗng, sửa trong `config/database.php` (hoặc `src/Core/Database.php`).
+*Lưu ý: Nếu mật khẩu MySQL root của WAMP/XAMPP không rỗng, vui lòng sửa thông tin tại `config/database.php` (hoặc `src/Core/Database.php`) trước khi chạy file install.*
 
 ## 7. Tài khoản demo
 
